@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
 
 /**
  * Authentication schema.
@@ -85,12 +85,132 @@ export const verification = sqliteTable("verification", {
 /**
  * Below, feel free to delete/update/add tables as you see fit for your app.
  */
-export const demoData = sqliteTable("demo_data", {
+
+// ---------------------------------------------------------
+// FOOD / CATEGORY / UNIT
+// ---------------------------------------------------------
+
+export const foodCat = sqliteTable("food_cat", {
   id: integer("id").primaryKey(),
-  header: text("header").notNull(),
-  type: text("type").notNull(),
-  status: text("status").notNull(),
-  target: integer("target").notNull(),
-  limit: integer("limit").notNull(),
-  reviewer: text("reviewer").notNull(),
+  name: text("name").notNull(),
 });
+
+export const recipeCat = sqliteTable("recipe_cat", {
+  id: integer("id").primaryKey(),
+  name: text("name").notNull(),
+});
+
+export const ingredientCat = sqliteTable("ingredient_cat", {
+  id: integer("id").primaryKey(),
+  name: text("name").notNull(),
+});
+
+export const unit = sqliteTable("unit", {
+  id: integer("id").primaryKey(),
+  name: text("name").notNull(),
+  shortForm: text("short_form").notNull(),
+});
+
+// ---------------------------------------------------------
+// INGREDIENTS
+// ---------------------------------------------------------
+
+export const ingredients = sqliteTable("ingredients", {
+  id: integer("id").primaryKey(),
+  name: text("name").notNull(),
+  category: integer("category")
+    .notNull()
+    .references(() => ingredientCat.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  unit: integer("unit")
+    .notNull()
+    .references(() => unit.id, { onDelete: "restrict", onUpdate: "cascade" }),
+});
+
+// ---------------------------------------------------------
+// RECIPE
+// ---------------------------------------------------------
+
+export const recipe = sqliteTable("recipe", {
+  id: integer("id").primaryKey(),
+  title: text("title").notNull(),
+  steps: text("steps").notNull(),
+  prepareTime: integer("prepare_time").notNull(),
+  cookingTime: integer("cooking_time").notNull(),
+  portions: integer("portions").notNull(),
+  foodCategory: integer("food_category")
+    .notNull()
+    .references(() => foodCat.id, { onDelete: "restrict", onUpdate: "cascade" }),
+});
+
+// ---------------------------------------------------------
+// RECIPE_INGREDIENTS
+// ---------------------------------------------------------
+
+export const recipeIngredients = sqliteTable(
+  "recipe_ingredients",
+  {
+    recipeId: integer("recipe_id")
+      .notNull()
+      .references(() => recipe.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    ingredientId: integer("ingredient_id")
+      .notNull()
+      .references(() => ingredients.id, { onDelete: "restrict", onUpdate: "cascade" }),
+    amount: integer("amount").notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.recipeId, table.ingredientId] }),
+  }),
+);
+
+// ---------------------------------------------------------
+// RECIPE_ATTRIBUTES
+// ---------------------------------------------------------
+
+export const recipeAttributes = sqliteTable(
+  "recipe_attributes",
+  {
+    recipeId: integer("recipe_id")
+      .notNull()
+      .references(() => recipe.id, { onDelete: "cascade", onUpdate: "cascade" }),
+    recipeCat: integer("recipe_cat")
+      .notNull()
+      .references(() => recipeCat.id, { onDelete: "restrict", onUpdate: "cascade" }),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.recipeId, table.recipeCat] }),
+  }),
+);
+
+// ---------------------------------------------------------
+// SHOPPING_LIST
+// ---------------------------------------------------------
+
+export const shoppingList = sqliteTable("shopping_list", {
+  id: integer("id").primaryKey(),
+  ingredientId: integer("ingredient_id")
+    .notNull()
+    .references(() => ingredients.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  dateOfUse: text("date_of_use").notNull(),
+  amount: integer("amount").notNull(),
+  checked: integer("checked", { mode: "boolean" }).default(false).notNull(),
+});
+
+// ---------------------------------------------------------
+// CALENDAR
+// ---------------------------------------------------------
+
+export const calendar = sqliteTable(
+  "calendar",
+  {
+    date: text("date").notNull(),
+    daytime: integer("daytime")
+      .notNull()
+      .references(() => foodCat.id, { onDelete: "restrict", onUpdate: "cascade" }), // laut ERD
+    recipe: integer("recipe")
+      .notNull()
+      .references(() => recipe.id, { onDelete: "cascade", onUpdate: "cascade" }),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.date, table.daytime] }),
+  }),
+);
