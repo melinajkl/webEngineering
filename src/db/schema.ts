@@ -1,0 +1,2 @@
+// schema für die Datenbank
+ 
