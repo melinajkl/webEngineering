@@ -170,6 +170,7 @@ export const shoppingList = sqliteTable("SHOPPING_LIST", {
   ingredientId: integer("ingredient_id").references(() => ingredients.id),
   dateOfUse: real("date_of_use"),
   amount: integer("amount"),
+  unitId: integer("unitId").references(() => unit.id),
   checked: integer("checked", { mode: "boolean" }),
 });
 
@@ -180,7 +181,7 @@ export const calendar = sqliteTable(
   {
     date: real("date"),
     daytime: real("daytime").references(() => foodCat.id), // based on diagram
-    recipe: integer("recipe").references(() => recipe.id),
+    recipe_id: integer("recipe").references(() => recipe.id),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.date, table.daytime] }),
