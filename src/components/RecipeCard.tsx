@@ -1,9 +1,5 @@
 "use client";
 
-// oben ergänzen
-
-
-
 import {use, useState, useTransition} from "react";
 import type { CreateRecipeInput } from "@/actions/create_recipe";
 import type { UnitRow } from "@/db/queries/getUnits";
@@ -33,7 +29,9 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
     const [difficulty, setDifficulty] = useState<CreateRecipeInput["difficulty"]>("easy");
     const [foodCategory, setFoodCategory] = useState<string>(""); // komma-separiert im UI
 
-    const [ingredients, setIngredients] = useState<Ingredient[]>([{ name: "", quantity: "" }]);
+    const [ingredients, setIngredients] = useState<Ingredient[]>([
+        { name: "", quantity: "", unitId: undefined},
+    ]);
 
     const units = use(unitsPromise);
 
@@ -56,12 +54,12 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
         <form
             className="grid gap-6"
             action={(fd) => {
-                const payload = {
+                const payload: CreateRecipeInput = {
                     title,
                     portions,
                     prepareTime,
                     cookingTime,
-                    difficulty, // optional im Schema, darf fehlen – wir schicken ihn trotzdem
+                    difficulty,
                     foodCategory: foodCategory
                         .split(",")
                         .map((t) => t.trim())
@@ -69,10 +67,8 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                     ingredients: ingredients
                         .map((i) => ({ ...i, name: i.name.trim() }))
                         .filter((i) => i.name.length > 0),
-                    steps: steps
-                        .map((s) => ({ text: s.text.trim() }))
-                        .filter((s) => s.text.length > 0),
-                } satisfies CreateRecipeInput;
+                    steps: steps.map((s) => ({ text: s.text.trim() })).filter((s) => s.text.length > 0),
+                };
                 fd.set("payload", JSON.stringify(payload));
                 startTransition(async () => {
                     const res = await action(fd);
@@ -82,8 +78,8 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                         setTitle("");
                         setPortions(4);
                         setPrepareTime(15);
-                        setCookingTime(30);+
-                        setDifficulty("easy");
+                        setCookingTime(30);
+                        //setDifficulty("easy");
                         setFoodCategory("");
                         setIngredients([{ name: "", quantity: ""}]);
                         setSteps([{ text: "" }]);
@@ -176,8 +172,9 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                                 />
                                 {/* unit als Dropdown */}
                                 <div className="md:col-span-2">
-                                    <Select value={ingredients[i].unitId != null ? String(ingredients[i].unitId) : ""}
-                                            onValueChange={(v) => updateIngredient(i, { unitId: v ? Number(v) : undefined })}
+                                    <Select
+                                        value={ing.unitId != null ? String(ing.unitId) : undefined}
+                                        onValueChange={(v) => updateIngredient(i, { unitId: v ? Number(v) : undefined })}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Einheit" />
@@ -185,7 +182,7 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                                         <SelectContent>
                                             {units.map((u) => {
                                                 const value = u.shortForm ?? String(u.id);
-                                                const label = u.shortForm ? `${u.name} ${u.shortForm}` : u.name;
+                                                const label = u.shortForm ? `${u.name} (${u.shortForm})` : u.name;
                                                 return (
                                                     <SelectItem key={u.id} value={value}>
                                                         {label}
