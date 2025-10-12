@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { sqliteTable, integer, text, real, primaryKey } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
+
 /**
  * Authentication schema.
  *
@@ -120,7 +121,7 @@ export const recipe = sqliteTable("RECIPE", {
   cookingTime: integer("cooking_time"),
   portions: integer("portions"),
   foodCategory: integer("food_category").references(() => foodCat.id),
-});
+});/// Steps als fließtext oder einzelne einträge?
 
 export const ingredients = sqliteTable("INGREDIENTS", {
   id: integer("id").primaryKey(),
