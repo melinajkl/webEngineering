@@ -10,6 +10,7 @@ import { eq } from "drizzle-orm";
 const IngredientSchema = z.object({
     name: z.string().min(1),
     quantity: z.string().optional(),
+    unitId: z.coerce.number().int().optional(),
     //Dropdownmenü für Einheiten
 });
 
@@ -23,12 +24,13 @@ const RecipeSchema = z.object({
     prepare_time: z.coerce.number().int().min(0).max(24 * 60).optional(),
     cooking_time: z.coerce.number().int().min(0).max(24 * 60).optional(),
     difficulty: z.enum(["easy", "medium", "hard"]).default("easy"),
-    foodCategory: z.array(z.string().min(1)).max(20).default([]),
+    food_category: z.array(z.string().min(1)).max(20).default([]),
     ingredients: z.array(IngredientSchema).min(1),
     steps: z.array(StepSchema).min(1),
 });
 
-/*export type CreateRecipeInput = z.infer<typeof RecipeSchema>;
+/*
+export type CreateRecipeInput = z.infer<typeof RecipeSchema>;
 export type CreateRecipeResult =
     | { ok: true; id: string; message: string }
     | { ok: false; error: string };

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import {use, useState, useTransition} from "react";
 import type { CreateRecipeInput } from "@/actions/create_recipe";
+import type { UnitRow } from "@/db/queries/getUnits";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,12 +14,14 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 
 type Props = {
     action: (fd: FormData) => Promise<{ ok: boolean; id?: string; message?: string; error?: string }>;
+    unitsPromise: Promise<UnitRow[]>
 };
+
 
 type Ingredient = NonNullable<CreateRecipeInput["ingredients"]>[number];
 type Step = NonNullable<CreateRecipeInput["steps"]>[number];
 
-export default function RecipeForm({ action }: Props) {
+export default function RecipeForm({ action, unitsPromise }: Props) {
     const [title, setTitle] = useState("");
     const [servings, setServings] = useState<number | undefined>(2);
     const [prepare_time, setPrepareTime] = useState<number | undefined>(15);
@@ -27,9 +30,13 @@ export default function RecipeForm({ action }: Props) {
     const [foodCategory, setFoodCategory] = useState<string>(""); // komma-separiert im UI
 
     const [ingredients, setIngredients] = useState<Ingredient[]>([
-        { name: "", quantity: "", unit: ""},
+        { name: "", quantity: "", unitId: undefined},
     ]);
-    const [steps, setSteps] = useState<Step[]>([{ text: "" }]);
+
+    const units = use(unitsPromise);
+
+
+        const [steps, setSteps] = useState<Step[]>([{ text: "" }]);
 
     const [message, setMessage] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
@@ -53,7 +60,7 @@ export default function RecipeForm({ action }: Props) {
                     prepare_time,
                     cooking_time,
                     difficulty,
-                    foodCategory: foodCategory
+                    food_category: foodCategory
                         .split(",")
                         .map((t) => t.trim())
                         .filter(Boolean),
@@ -163,12 +170,28 @@ export default function RecipeForm({ action }: Props) {
                                     value={ing.quantity ?? ""}
                                     onChange={(e) => updateIngredient(i, { quantity: e.target.value })}
                                 />
-                                <Input
-                                    className="md:col-span-2"
-                                    placeholder="Einheit"
-                                    value={ing.unit ?? ""}
-                                    onChange={(e) => updateIngredient(i, { unit: e.target.value })}
-                                />
+                                {/* unit als Dropdown */}
+                                <div className="md:col-span-2">
+                                    <Select
+                                        value={ingredients[i].unitId != null ? String(ingredients[i].unitId) : ""}
+                                        onValueChange={(v) => updateIngredient(i, { unitId: v ? Number(v) : undefined })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Einheit" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {units.map((u) => {
+                                                const value = u.shortForm ?? String(u.id);
+                                                const label = u.shortForm ? `${u.name} ${u.shortForm}` : u.name;
+                                                return (
+                                                    <SelectItem key={u.id} value={value}>
+                                                        {label}
+                                                    </SelectItem>
+                                                );
+                                            })}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                                 <div className="md:col-span-1 flex gap-1">
                                     <Button type="button" variant="destructive" onClick={() => removeIngredient(i)}>
                                         <Trash2 className="size-4" />

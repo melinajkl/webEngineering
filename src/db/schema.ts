@@ -106,7 +106,7 @@ export const ingredientCat = sqliteTable("INGREDIENT_CAT", {
 });
 
 export const unit = sqliteTable("UNIT", {
-  id: integer("id").primaryKey({autoIncrement: true}),
+  id: integer("id").primaryKey({autoIncrement: true}), //// evtl shortForm als PK
   name: text("name").notNull(),
   shortForm: text("short_form"),
 });
