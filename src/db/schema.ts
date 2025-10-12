@@ -116,7 +116,7 @@ export const unit = sqliteTable("UNIT", {
 export const recipe = sqliteTable("RECIPE", {
   id: integer("id").primaryKey(),
   title: text("title").notNull(),
-  steps: text("steps"), // can be removed if you use RECIPE_STEPS
+  steps: text("steps"), // can be removed -if you use RECIPE_STEPS
   prepareTime: integer("prepare_time"),
   cookingTime: integer("cooking_time"),
   portions: integer("portions"),

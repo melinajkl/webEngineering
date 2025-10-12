@@ -1,5 +1,9 @@
 "use client";
 
+// oben ergänzen
+
+
+
 import {use, useState, useTransition} from "react";
 import type { CreateRecipeInput } from "@/actions/create_recipe";
 import type { UnitRow } from "@/db/queries/getUnits";
@@ -23,15 +27,13 @@ type Step = NonNullable<CreateRecipeInput["steps"]>[number];
 
 export default function RecipeForm({ action, unitsPromise }: Props) {
     const [title, setTitle] = useState("");
-    const [servings, setServings] = useState<number | undefined>(2);
-    const [prepare_time, setPrepareTime] = useState<number | undefined>(15);
-    const [cooking_time, setCookingTime] = useState<number | undefined>(30);
+    const [portions, setPortions] = useState<number | undefined>(2);
+    const [prepareTime, setPrepareTime] = useState<number | undefined>(15);
+    const [cookingTime, setCookingTime] = useState<number | undefined>(30);
     const [difficulty, setDifficulty] = useState<CreateRecipeInput["difficulty"]>("easy");
     const [foodCategory, setFoodCategory] = useState<string>(""); // komma-separiert im UI
 
-    const [ingredients, setIngredients] = useState<Ingredient[]>([
-        { name: "", quantity: "", unitId: undefined},
-    ]);
+    const [ingredients, setIngredients] = useState<Ingredient[]>([{ name: "", quantity: "" }]);
 
     const units = use(unitsPromise);
 
@@ -54,21 +56,23 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
         <form
             className="grid gap-6"
             action={(fd) => {
-                const payload: CreateRecipeInput = {
+                const payload = {
                     title,
-                    servings,
-                    prepare_time,
-                    cooking_time,
-                    difficulty,
-                    food_category: foodCategory
+                    portions,
+                    prepareTime,
+                    cookingTime,
+                    difficulty, // optional im Schema, darf fehlen – wir schicken ihn trotzdem
+                    foodCategory: foodCategory
                         .split(",")
                         .map((t) => t.trim())
                         .filter(Boolean),
                     ingredients: ingredients
                         .map((i) => ({ ...i, name: i.name.trim() }))
                         .filter((i) => i.name.length > 0),
-                    steps: steps.map((s) => ({ text: s.text.trim() })).filter((s) => s.text.length > 0),
-                };
+                    steps: steps
+                        .map((s) => ({ text: s.text.trim() }))
+                        .filter((s) => s.text.length > 0),
+                } satisfies CreateRecipeInput;
                 fd.set("payload", JSON.stringify(payload));
                 startTransition(async () => {
                     const res = await action(fd);
@@ -76,12 +80,12 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                     if (res.ok) {
                         // Minimal reset
                         setTitle("");
-                        setServings(4);
+                        setPortions(4);
                         setPrepareTime(15);
-                        setCookingTime(30);
+                        setCookingTime(30);+
                         setDifficulty("easy");
                         setFoodCategory("");
-                        setIngredients([{ name: "", quantity: "", unit: ""}]);
+                        setIngredients([{ name: "", quantity: ""}]);
                         setSteps([{ text: "" }]);
                     }
                 });
@@ -98,14 +102,14 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                     </div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div className="grid gap-2">
-                            <Label htmlFor="servings">Portionen</Label>
+                            <Label htmlFor="portions">Portionen</Label>
                             <Input
-                                id="servings"
+                                id="portions"
                                 type="number"
                                 min={1}
                                 max={64}
-                                value={servings ?? ""}
-                                onChange={(e) => setServings(e.target.value ? Number(e.target.value) : undefined)}
+                                value={portions ?? ""}
+                                onChange={(e) => setPortions(e.target.value ? Number(e.target.value) : undefined)}
                             />
                         </div>
                         <div className="grid gap-2">
@@ -114,7 +118,7 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                                 id="prep"
                                 type="number"
                                 min={0}
-                                value={prepare_time ?? ""}
+                                value={prepareTime ?? ""}
                                 onChange={(e) => setPrepareTime(e.target.value ? Number(e.target.value) : undefined)}
                             />
                         </div>
@@ -124,7 +128,7 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                                 id="cook"
                                 type="number"
                                 min={0}
-                                value={cooking_time ?? ""}
+                                value={cookingTime ?? ""}
                                 onChange={(e) => setCookingTime(e.target.value ? Number(e.target.value) : undefined)}
                             />
                         </div>
@@ -172,9 +176,8 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                                 />
                                 {/* unit als Dropdown */}
                                 <div className="md:col-span-2">
-                                    <Select
-                                        value={ingredients[i].unitId != null ? String(ingredients[i].unitId) : ""}
-                                        onValueChange={(v) => updateIngredient(i, { unitId: v ? Number(v) : undefined })}
+                                    <Select value={ingredients[i].unitId != null ? String(ingredients[i].unitId) : ""}
+                                            onValueChange={(v) => updateIngredient(i, { unitId: v ? Number(v) : undefined })}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Einheit" />

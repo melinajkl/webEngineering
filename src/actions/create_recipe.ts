@@ -4,32 +4,33 @@ import "server-only";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { recipes, recipeIngredients, recipeSteps } from "@/db/schema";
+import { recipe, recipeIngredients, recipeSteps, ingredients } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
+/** Teil-Schemas */
 const IngredientSchema = z.object({
     name: z.string().min(1),
     quantity: z.string().optional(),
     unitId: z.coerce.number().int().optional(),
-    //Dropdownmenü für Einheiten
 });
 
 const StepSchema = z.object({
     text: z.string().min(1),
 });
 
-const RecipeSchema = z.object({
+/** Hauptschema (wie bei dir) */
+export const RecipeSchema = z.object({
     title: z.string().min(1),
-    servings: z.coerce.number().int().min(1).max(64).optional(),
-    prepare_time: z.coerce.number().int().min(0).max(24 * 60).optional(),
-    cooking_time: z.coerce.number().int().min(0).max(24 * 60).optional(),
-    difficulty: z.enum(["easy", "medium", "hard"]).default("easy"),
-    food_category: z.array(z.string().min(1)).max(20).default([]),
+    portions: z.coerce.number().int().min(1).max(64).optional(),
+    prepareTime: z.coerce.number().int().min(0).max(24 * 60).optional(),
+    cookingTime: z.coerce.number().int().min(0).max(24 * 60).optional(),
+    difficulty: z.enum(["easy", "medium", "hard"]).default("easy").optional(), // optional, keine DB-Pflicht
+    foodCategory: z.array(z.string().min(1)).max(20).default([]),
     ingredients: z.array(IngredientSchema).min(1),
     steps: z.array(StepSchema).min(1),
 });
 
-/*
 export type CreateRecipeInput = z.infer<typeof RecipeSchema>;
 export type CreateRecipeResult =
     | { ok: true; id: string; message: string }
@@ -47,17 +48,21 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
     } catch {
         return { ok: false, error: "Payload is not valid JSON" };
     }
+
     if (!parsed.success) {
         return { ok: false, error: parsed.error.errors[0]?.message ?? "Invalid input" };
     }
 
-    // Keine DB-Operationen mehr:
+    // Keine DB-Operationen: nur eine neue ID erzeugen und UI revalidieren
     const id = crypto.randomUUID();
 
-    // Optional: UI-Refresh (falls Liste/Seite auf Daten reagiert)
+    // Falls deine UI eine Liste/Seite zeigt, die auf die Änderung reagieren soll:
     revalidatePath("/", "layout");
     revalidatePath("/recipes", "page");
 
-    // Du kannst hier auch in ein Log/Telemetry schreiben, wenn gewünscht.
-    return { ok: true, id, message: `Rezept „${parsed.data.title}“ entgegengenommen (keine DB geschrieben).` };
-}*/
+    return {
+        ok: true,
+        id,
+        message: `Rezept „${parsed.data.title}“ entgegengenommen (ohne DB-Persistenz).`,
+    };
+}
