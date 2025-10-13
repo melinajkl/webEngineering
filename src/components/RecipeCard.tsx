@@ -27,7 +27,7 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
     const [prepareTime, setPrepareTime] = useState<number | undefined>(15);
     const [cookingTime, setCookingTime] = useState<number | undefined>(30);
     const [difficulty, setDifficulty] = useState<CreateRecipeInput["difficulty"]>("easy");
-    const [foodCategory, setFoodCategory] = useState<string>(""); // komma-separiert im UI
+    const [recipeCategory, setRecipeCategory] = useState<string>(""); // komma-separiert im UI
 
     const [ingredients, setIngredients] = useState<Ingredient[]>([
         { name: "", quantity: "", unitId: undefined},
@@ -60,7 +60,7 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                     prepareTime,
                     cookingTime,
                     difficulty,
-                    recipeCategory: foodCategory
+                    recipeCategory: recipeCategory
                         .split(",")
                         .map((t) => t.trim())
                         .filter(Boolean),
@@ -80,7 +80,7 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                         setPrepareTime(15);
                         setCookingTime(30);
                         //setDifficulty("easy");
-                        setFoodCategory("");
+                        setRecipeCategory("");
                         setIngredients([{ name: "", quantity: ""}]);
                         setSteps([{ text: "" }]);
                     }
@@ -144,7 +144,7 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                         </div>
                         <div className="col-span-2 grid gap-2">
                             <Label htmlFor="foodCategory">Essenskategorie (Komma-getrennt)</Label>
-                            <Input id="food_category" value={foodCategory} onChange={(e) => setFoodCategory(e.target.value)} placeholder="z. B. pasta, italienisch" />
+                            <Input id="food_category" value={recipeCategory} onChange={(e) => setRecipeCategory(e.target.value)} placeholder="z. B. pasta, italienisch" />
                         </div>
                     </div>
 
