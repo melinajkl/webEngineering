@@ -91,13 +91,13 @@ export const verification = sqliteTable("verification", {
 // --- CATEGORY TABLES ---
 
 export const foodCat = sqliteTable("FOOD_CAT", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey({autoIncrement: true}),
   name: text("name").notNull(),
 });
 
 export const recipeCat = sqliteTable("RECIPE_CAT", {
-  id: integer("id").primaryKey(),
-  name: text("name").notNull(),
+  id: integer("id").primaryKey({autoIncrement: true}),
+  name: text("name").notNull().unique(),
 });
 
 export const ingredientCat = sqliteTable("INGREDIENT_CAT", {
@@ -110,6 +110,16 @@ export const unit = sqliteTable("UNIT", {
   name: text("name").notNull(),
   shortForm: text("short_form"),
 });
+
+/*INSERT OR IGNORE INTO "UNIT" ("name","short_form") VALUES
+ ('Gramm','g'),
+ ('Kilogramm','kg'),
+ ('Milliliter','ml'),
+ ('Liter','l'),
+ ('Teelöffel','TL'),
+ ('Esslöffel','EL'),
+ ('Stück','stk');
+*/
 
 // --- MAIN TABLES ---
 
@@ -124,7 +134,7 @@ export const recipe = sqliteTable("RECIPE", {
 });
 
 export const ingredients = sqliteTable("INGREDIENTS", {
-  id: integer("id").primaryKey( ),
+  id: integer("id").primaryKey( {autoIncrement: true}),
   name: text("name").notNull(),
   category: integer("category").references(() => ingredientCat.id),
   unit: integer("unit").references(() => unit.id),
@@ -158,7 +168,7 @@ export const recipeAttributes = sqliteTable(
 // --- STEP TABLE ---
 
 export const recipeSteps = sqliteTable("RECIPE_STEPS", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey({ autoIncrement: true}),
   recipeId: integer("recipe_id").references(() => recipe.id),
   stepNumber: integer("step_number"),
   step: text("step").notNull(),

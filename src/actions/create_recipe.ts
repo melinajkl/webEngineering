@@ -4,7 +4,7 @@ import "server-only";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { recipe, recipeIngredients, recipeSteps, ingredients } from "@/db/schema";
+import {recipe, recipeIngredients, recipeSteps, ingredients, recipeCat} from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 const IngredientSchema = z.object({
@@ -12,6 +12,11 @@ const IngredientSchema = z.object({
     quantity: z.string().optional(),
     unitId: z.coerce.number().int().optional(),
 });
+
+/*const IngredientInRecipeSchema = z.object({
+    ingredientId: z.coerce.number().int().positive(),
+    amount: z.coerce.number().int().min(0).optional(), // oder .nullable()
+});*/
 
 const StepSchema = z.object({
     text: z.string().min(1),
@@ -23,7 +28,8 @@ const RecipeSchema = z.object({
     prepareTime: z.coerce.number().int().min(0).max(24 * 60).optional(),
     cookingTime: z.coerce.number().int().min(0).max(24 * 60).optional(),
     difficulty: z.enum(["easy", "medium", "hard"]).default("easy").optional(), /// nicht besprochen also nicht in DB
-    foodCategory: z.array(z.string().min(1)).max(20).default([]),
+    //foodCategory: z.string().min(1).optional(),
+    recipeCategory: z.array(z.string().min(1)).max(20).default([]),
     ingredients: z.array(IngredientSchema).min(1),
     steps: z.array(StepSchema).min(1),
 });
@@ -31,52 +37,79 @@ const RecipeSchema = z.object({
 
 export type CreateRecipeInput = z.infer<typeof RecipeSchema>;
 export type CreateRecipeResult =
-    | { ok: true; id: string; message: string }
+    | { ok: true; message: string }
     | { ok: false; error: string };
 
 export async function createRecipeAction(formData: FormData): Promise<CreateRecipeResult> {
     const raw = formData.get("payload");
     if (typeof raw !== "string") {
-        return { ok: false, error: "Payload missing" };
+        return {ok: false, error: "Payload missing"};
     }
 
-    let parsed: ReturnType<typeof RecipeSchema.safeParse>;
+    let parsedRecipe: ReturnType<typeof RecipeSchema.safeParse>;
     try {
-        parsed = RecipeSchema.safeParse(JSON.parse(raw));
+        parsedRecipe = RecipeSchema.safeParse(JSON.parse(raw));
     } catch {
-        return { ok: false, error: "Payload is not valid JSON" };
+        return {ok: false, error: "Payload is not valid JSON"};
     }
-    if (!parsed.success) {
-        return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+    if (!parsedRecipe.success) {
+        return {ok: false, error: parsedRecipe.error.issues[0]?.message ?? "Invalid input"};
     }
-
-    // keine DB-Operationen
-    const id = crypto.randomUUID();
 
     //DB operation
-    try { await db.transaction( async (transfer) => {
-        await transfer.insert(recipe).values({
-            title: parsed.data.title,
-            prepareTime: parsed.data.prepareTime ?? null,
-            cookingTime: parsed.data.cookingTime ?? null,
-            portions: parsed.data.portions ?? null
+    try {
+        await db.transaction(async (transfer) => {
+
+
+            await transfer.insert(recipeCat).values(
+                parsedRecipe.data.recipeCategory.map((s) => ({
+                    name: s.trim(),
+                })),
+            ).onConflictDoNothing();
+
+
+            const [row] = await transfer.insert(recipe).values({
+                title: parsedRecipe.data.title,
+                prepareTime: parsedRecipe.data.prepareTime ?? null,
+                cookingTime: parsedRecipe.data.cookingTime ?? null,
+                portions: parsedRecipe.data.portions ?? null
+            }).returning({id: recipe.id});
+
+            const recipeId = row.id
+
+            /*await transfer
+                .insert(recipeIngredients)
+                .values({
+                    parsed.data.ingredients.map((item, index) => ({
+                        recipeId,                               // FK zum Rezept
+                        ingredientId: Number(item.ingredientId),// FK zur INGREDIENTS.id
+                        amount: item.amount != null ? Number(item.amount) : null,
+                    });
+            });*/
+
+
+            const {steps} = JSON.parse(raw) as { steps: { text: string }[] };
+            // vorhandene Schritte des Rezepts ersetzen
+            await transfer.delete(recipeSteps).where(eq(recipeSteps.recipeId, recipeId));
+
+            await transfer.insert(recipeSteps).values(
+                steps.map((s, idx) => ({
+                    recipeId,              // FK auf das Rezept (number)
+                    stepNumber: idx + 1,   // 1, 2, 3, ...
+                    step: s.text.trim(),   // Text des Schritts
+                })),
+            );
+
+
+
         });
-
-
-    })
-
-    //StepTable
-    //recipeIngredients
-
-
-
-    }
+    } catch (e) {}
 
 
 
     // >>> HIER: immer etwas zurückgeben
-    return { ok: true, id, message: `Rezept „${raw.toString()} ${parsed.data.title} ${parsed.data.cookingTime} ${parsed.data.difficulty} ${parsed.data.prepareTime} 
-     ${parsed.data.ingredients}  ${parsed.data.foodCategory} ${parsed.data.steps} ${parsed.data.portions}" entgegengenommen.` };
+    return { ok: true, message: `Rezept „${raw.toString()} ${parsedRecipe.data.title} ${parsedRecipe.data.cookingTime} ${parsedRecipe.data.difficulty} ${parsedRecipe.data.prepareTime} 
+     ${parsedRecipe.data.ingredients}  ${parsedRecipe.data.recipeCategory} ${parsedRecipe.data.steps} ${parsedRecipe.data.portions}" entgegengenommen.` };
 }
 
 

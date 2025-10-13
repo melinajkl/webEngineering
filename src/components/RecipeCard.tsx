@@ -60,7 +60,7 @@ export default function RecipeForm({ action, unitsPromise }: Props) {
                     prepareTime,
                     cookingTime,
                     difficulty,
-                    foodCategory: foodCategory
+                    recipeCategory: foodCategory
                         .split(",")
                         .map((t) => t.trim())
                         .filter(Boolean),
