@@ -114,17 +114,17 @@ export const unit = sqliteTable("UNIT", {
 // --- MAIN TABLES ---
 
 export const recipe = sqliteTable("RECIPE", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey({ autoIncrement: true}),
   title: text("title").notNull(),
-  steps: text("steps"), // can be removed -if you use RECIPE_STEPS
+  steps: text("steps"), // can be removed -if you use RECIPE_STEPS //schreibe in step table
   prepareTime: integer("prepare_time"),
   cookingTime: integer("cooking_time"),
   portions: integer("portions"),
   foodCategory: integer("food_category").references(() => foodCat.id),
-});/// Steps als fließtext oder einzelne einträge?
+});
 
 export const ingredients = sqliteTable("INGREDIENTS", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey( ),
   name: text("name").notNull(),
   category: integer("category").references(() => ingredientCat.id),
   unit: integer("unit").references(() => unit.id),

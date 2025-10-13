@@ -53,12 +53,33 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
     // keine DB-Operationen
     const id = crypto.randomUUID();
 
-    // optional: UI-Refresh (nur wenn du's brauchst)
-    // revalidatePath("/", "layout");
-    // revalidatePath("/recipes", "page");
+    //DB operation
+    try { await db.transaction( async (transfer) => {
+        await transfer.insert(recipe).values({
+            title: parsed.data.title,
+            prepareTime: parsed.data.prepareTime ?? null,
+            cookingTime: parsed.data.cookingTime ?? null,
+            portions: parsed.data.portions ?? null
+        });
+
+
+    })
+
+    //StepTable
+    //recipeIngredients
+
+
+
+    }
+
+
 
     // >>> HIER: immer etwas zurückgeben
-    return { ok: true, id, message: `Rezept „${parsed.data.title} ${parsed.data.cookingTime} ${parsed.data.difficulty?.toString} ${parsed.data.prepareTime} 
-     ${parsed.data.ingredients}  ${parsed.data.foodCategory} ${parsed.data.steps} ${parsed.data.portions?.toString()}" entgegengenommen.` };
+    return { ok: true, id, message: `Rezept „${raw.toString()} ${parsed.data.title} ${parsed.data.cookingTime} ${parsed.data.difficulty} ${parsed.data.prepareTime} 
+     ${parsed.data.ingredients}  ${parsed.data.foodCategory} ${parsed.data.steps} ${parsed.data.portions}" entgegengenommen.` };
 }
 
+
+
+
+//Rezept „{"title":"kasdjl","portions":2,"prepareTime":15,"cookingTime":30,"difficulty":"easy","foodCategory":["slas"],"ingredients":[{"name":"asödlkqödwlk","quantity":"20"}],"steps":[{"text":"öalskdölaskdpaokdp"}]} kasdjl 30 easy 15 [object Object] slas [object Object] 2" entgegengenommen.
