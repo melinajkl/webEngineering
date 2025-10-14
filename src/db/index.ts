@@ -1,8 +1,9 @@
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
 
-const client = createClient({
-  url: "file:./src/db/localdb.sqlite", // This is undefined
+export const db = drizzle({
+  connection: {
+    // biome-ignore lint/style/noNonNullAssertion: We have a .env file so we expect this to be fine
+    url: process.env.DATABASE_URL!,
+  },
 });
-
-export const db = drizzle(client);
