@@ -20,7 +20,7 @@ export function NavigationBar() {
   ];
 
   return (
-    <div className="w-full flex justify-center border-b border-gray-300 py-4 fixed top-2 left-0 bg-white z-50 shadow-sm">
+    <div className="w-full flex justify-center border-b border-gray-300 py-4 top-2 left-0 bg-white z-50 shadow-sm">
       <NavigationMenu>
         <NavigationMenuList className="flex gap-6">
           {navItems.map((item) => (
