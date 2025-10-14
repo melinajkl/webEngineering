@@ -4,19 +4,14 @@ import "server-only";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import {recipe, recipeIngredients, recipeSteps, ingredients, recipeCat} from "@/db/schema";
+import {recipe, recipeIngredients, recipeSteps, ingredients, recipeCat, foodCat} from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 const IngredientSchema = z.object({
     name: z.string().min(1),
-    quantity: z.string().optional(),
-    unitId: z.coerce.number().int().optional(),
+    quantity: z.coerce.number(),
+    unitId: z.coerce.number().int(),
 });
-
-/*const IngredientInRecipeSchema = z.object({
-    ingredientId: z.coerce.number().int().positive(),
-    amount: z.coerce.number().int().min(0).optional(), // oder .nullable()
-});*/
 
 const StepSchema = z.object({
     text: z.string().min(1),
@@ -24,11 +19,10 @@ const StepSchema = z.object({
 
 const RecipeSchema = z.object({
     title: z.string().min(1),
-    portions: z.coerce.number().int().min(1).max(64).optional(),
-    prepareTime: z.coerce.number().int().min(0).max(24 * 60).optional(),
-    cookingTime: z.coerce.number().int().min(0).max(24 * 60).optional(),
-    difficulty: z.enum(["easy", "medium", "hard"]).default("easy").optional(), /// nicht besprochen also nicht in DB
-    //foodCategory: z.string().min(1).optional(),
+    portions: z.coerce.number().int().min(1).max(64),
+    prepareTime: z.coerce.number().int().min(0).max(24 * 60),
+    cookingTime: z.coerce.number().int().min(0).max(24 * 60),
+    foodCategory: z.coerce.number().int().min(1),
     recipeCategory: z.array(z.string().min(1)).max(20).default([]),
     ingredients: z.array(IngredientSchema).min(1),
     steps: z.array(StepSchema).min(1),
@@ -67,25 +61,27 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
                 })),
             ).onConflictDoNothing();
 
-
             const [row] = await transfer.insert(recipe).values({
                 title: parsedRecipe.data.title,
-                prepareTime: parsedRecipe.data.prepareTime ?? null,
-                cookingTime: parsedRecipe.data.cookingTime ?? null,
-                portions: parsedRecipe.data.portions ?? null
+                foodCategory: parsedRecipe.data.foodCategory,
+                prepareTime: parsedRecipe.data.prepareTime,
+                cookingTime: parsedRecipe.data.cookingTime,
+                portions: parsedRecipe.data.portions
             }).returning({id: recipe.id});
 
             const recipeId = row.id
 
-            /*await transfer
+            /*const { ingredients } = JSON.parse(raw) as { ingredience: { text: number }[] };
+            await transfer
                 .insert(recipeIngredients)
                 .values({
-                    parsed.data.ingredients.map((item, index) => ({
+                    ingredients.map((item, amount) => ({
                         recipeId,                               // FK zum Rezept
-                        ingredientId: Number(item.ingredientId),// FK zur INGREDIENTS.id
-                        amount: item.amount != null ? Number(item.amount) : null,
-                    });
+                        ingredientId: ,// FK zur INGREDIENTS.id
+                        amount: amount
+                    }))
             });*/
+
 
 
             const {steps} = JSON.parse(raw) as { steps: { text: string }[] };
@@ -108,11 +104,11 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
 
 
     // >>> HIER: immer etwas zurückgeben
-    return { ok: true, message: `Rezept „${raw.toString()} ${parsedRecipe.data.title} ${parsedRecipe.data.cookingTime} ${parsedRecipe.data.difficulty} ${parsedRecipe.data.prepareTime} 
+    return { ok: true, message: `Rezept „${raw.toString()} ${parsedRecipe.data.title} ${parsedRecipe.data.cookingTime}  ${parsedRecipe.data.prepareTime} 
      ${parsedRecipe.data.ingredients}  ${parsedRecipe.data.recipeCategory} ${parsedRecipe.data.steps} ${parsedRecipe.data.portions}" entgegengenommen.` };
 }
 
 
-
+//„{"title":"Test","portions":2,"prepareTime":15,"cookingTime":30,"foodCategory":1,"recipeCategory":["pasta"],"ingredients":[{"name":"Bier","quantity":0,"unitId":2},{"name":"weizen","quantity":2,"unitId":3}],"steps":[{"text":"asd"}]} Test 30 15 [object Object],[object Object] pasta [object Object] 2" entgegengenommen.
 
 //Rezept „{"title":"kasdjl","portions":2,"prepareTime":15,"cookingTime":30,"difficulty":"easy","foodCategory":["slas"],"ingredients":[{"name":"asödlkqödwlk","quantity":"20"}],"steps":[{"text":"öalskdölaskdpaokdp"}]} kasdjl 30 easy 15 [object Object] slas [object Object] 2" entgegengenommen.
