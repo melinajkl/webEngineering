@@ -40,7 +40,7 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
           </div>
           <div className="flex flex-wrap gap-2">
             {recipe.foodCategory ? (
-              <Badge key={recipe.foodCategory.id} variant="default">
+              <Badge key={recipe.foodCategory.id} variant="secondary">
                 {recipe.foodCategory.name}
               </Badge>
             ) : null}
@@ -48,7 +48,7 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
             {recipe.attributes
               .filter((attr) => attr.id && attr.name)
               .map((attr) => (
-                <Badge key={attr.id} variant="secondary">
+                <Badge key={attr.id} variant="outline">
                   {attr.name}
                 </Badge>
               ))}
