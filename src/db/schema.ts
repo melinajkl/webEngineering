@@ -126,11 +126,10 @@ export const unit = sqliteTable("UNIT", {
 export const recipe = sqliteTable("RECIPE", {
   id: integer("id").primaryKey({ autoIncrement: true}),
   title: text("title").notNull(),
-  steps: text("steps"), // can be removed -if you use RECIPE_STEPS //schreibe in step table
-  prepareTime: integer("prepare_time"),
-  cookingTime: integer("cooking_time"),
-  portions: integer("portions"),
-  foodCategory: integer("food_category").references(() => foodCat.id),
+  prepareTime: integer("prepare_time").notNull(),
+  cookingTime: integer("cooking_time").notNull(),
+  portions: integer("portions").notNull(),
+  foodCategory: integer("food_category").references(() => foodCat.id).notNull(),
 });
 
 export const ingredients = sqliteTable("INGREDIENTS", {

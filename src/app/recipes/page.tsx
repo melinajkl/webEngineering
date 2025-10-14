@@ -1,14 +1,13 @@
 import { NavigationBar } from "@/components/NavigationBar";
-import OpenCreateRecipeButton from "./_components/open_create_recipe_button";
+import RecipeOverview from "@/components/RecipeOverview";
 
 export default function Page() {
   return (
-      <>
-          <NavigationBar />
-          <main className="container mx-auto grid min-h-[80vh] place-items-center p-6">
-              <OpenCreateRecipeButton label="Rezept erstellen" />
-          </main>
-      </>
-          );
-
+    <div className="flex flex-col min-h-screen">
+      <NavigationBar />
+      <div className="flex-1 overflow-auto">
+        <RecipeOverview />
+      </div>
+    </div>
+  );
 }
