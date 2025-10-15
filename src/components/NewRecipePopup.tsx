@@ -187,7 +187,7 @@ export default function RecipeForm({
                                 id="portions"
                                 type="number"
                                 min={1}
-                                max={64}
+                                max={15}
                                 value={Number.isFinite(portions) ? portions : ""}
                                 onChange={(e) => {
                                     const v = e.target.value;
