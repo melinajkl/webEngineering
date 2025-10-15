@@ -1,11 +1,13 @@
-"use client"; // This is a Client Component
-
+"use client";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "./ui/badge";
+import { IconChefHat, IconClock, IconUser } from "@tabler/icons-react";
+import { IngredientsTable } from "./IngredientsTable";
 
 interface RecipeDetailModalProps {
   recipe: {
@@ -14,9 +16,14 @@ interface RecipeDetailModalProps {
     prepareTime: number;
     cookingTime: number;
     portions: number;
-    foodCategory: { id: number; name: string| null } | null;
-    attributes: Array<{ id: number; name: string | null}>;
+    foodCategory: { id: number; name: string | null } | null;
+    attributes: Array<{ id: number; name: string | null }>;
     steps: Array<{ stepnumber: number; description: string }>;
+    ingredients: Array<{
+      ingredientname: string;
+      amount: number;
+      unit: string;
+    }>; // ✅ This should be an Array
   };
   isOpen: boolean;
   onClose: () => void;
@@ -27,48 +34,87 @@ export function RecipeDetailModal({
   isOpen,
   onClose,
 }: RecipeDetailModalProps) {
+  console.log("Modal received ingredients:", recipe.ingredients);
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl p-6">
+      <DialogContent className="max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">
             {recipe.title}
           </DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div>
-            <p>
-              <strong>Prep Time:</strong> {recipe.prepareTime} mins
-            </p>
-            <p>
-              <strong>Cook Time:</strong> {recipe.cookingTime} mins
-            </p>
-            <p>
-              <strong>Portions:</strong> {recipe.portions}
-            </p>
-            {recipe.foodCategory?.name && (
-              <p>
-                <strong>Category:</strong> {recipe.foodCategory.name}
-              </p>
-            )}
+
+        {/* Attributes and info */}
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4">
+          <div className="space-y-4">
+            <div className="flex gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                <IconClock className="w-4 h-4" />
+                <span>Prep: {recipe.prepareTime}m</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <IconChefHat className="w-4 h-4" />
+                <span>Cook: {recipe.cookingTime}m</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <IconUser className="w-4 h-4" />
+                <span>Servings: {recipe.portions}</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {recipe.foodCategory?.name && (
+                <Badge key={recipe.foodCategory.id} variant="secondary">
+                  {recipe.foodCategory.name}
+                </Badge>
+              )}
+              {recipe.attributes
+                .filter((attr) => attr.id && attr.name)
+                .map((attr) => (
+                  <Badge key={attr.id} variant="outline">
+                    {attr.name}
+                  </Badge>
+                ))}
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold mb-2">Attributes:</h3>
-            <ul className="list-disc pl-5">
-              {recipe.attributes.map((attr) => (
-                <li key={attr.id}>{attr.name}</li>
+        </div>
+
+        {/* Ingredients */}
+
+        {/* In RecipeDetailModal */}
+        {recipe.ingredients && recipe.ingredients.length > 0 ? (
+          <div className="mt-2">
+            <h3 className="text-sm px-2 text-muted-foreground mb-3">
+              Ingredients
+            </h3>
+            <IngredientsTable ingredients={recipe.ingredients} />
+          </div>
+        ) : (
+          <p className="text-gray-500 mt-6">No ingredients found.</p>
+        )}
+
+        {/* Steps */}
+        {recipe.steps && recipe.steps.length > 0 ? (
+          <div className="mt-1">
+            <h3 className="text-sm px-2 text-muted-foreground mb-3">
+              Instructions
+            </h3>
+            <div className="pt-3 space-y-2">
+              {recipe.steps.map((step) => (
+                <div
+                  key={step.stepnumber}
+                  className="flex gap-2 hover:bg-gray-50 -mx-2 px-2 py-1 rounded transition-colors"
+                >
+                  <span className="text-gray-400 font-medium min-w-[1.5rem]">
+                    {step.stepnumber}.
+                  </span>
+                  <span className="text-gray-700">{step.description}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
-        </div>
-        <div className="mt-6">
-          <h3 className="font-semibold mb-2">Steps:</h3>
-          <ol className="list-decimal pl-5 space-y-2">
-            {recipe.steps.map((step) => (
-              <li key={step.stepnumber}>{step.description}</li>
-            ))}
-          </ol>
-        </div>
+        ) : (
+          <p className="text-gray-500 mt-6">No steps found.</p>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { IconClock, IconChefHat } from "@tabler/icons-react";
 import { useState } from "react";
-import { RecipeDetailModal } from "@/components/RecipeDetailModal"; // Make sure this exists
+import { RecipeDetailModal } from "@/components/RecipeDetailModal";
 
 interface Recipe {
   id: number;
@@ -23,30 +23,52 @@ interface Recipe {
 
 export function RecipeCard({ recipe }: { recipe: Recipe }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [steps, setSteps] = useState<
-    Array<{ stepnumber: number; description: string }>
-  >([]);
+  const [recipeDetails, setRecipeDetails] = useState<{
+    steps: Array<{ stepnumber: number; description: string }>;
+    ingredients: Array<{
+      ingredientname: string;
+      amount: number;
+      unit: string;
+    }>;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleClick = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/recipe/${recipe.id}/steps`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch recipe steps");
-      }
-      const { steps } = await response.json();
-      setSteps(steps);
-      setIsModalOpen(true);
-    } catch (err) {
-      setError("Failed to load recipe steps. Please try again.");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+ const handleClick = async () => {
+   setIsLoading(true);
+   setError(null);
+   try {
+     // Fetch both in parallel
+     const [stepsResponse, ingredientsResponse] = await Promise.all([
+       fetch(`/api/recipe/${recipe.id}/steps`),
+       fetch(`/api/recipe/${recipe.id}/ingredients`),
+     ]);
+
+     if (!stepsResponse.ok || !ingredientsResponse.ok) {
+       throw new Error("Failed to fetch recipe details!");
+     }
+
+     const stepsData = await stepsResponse.json();
+     const ingredientsData = await ingredientsResponse.json();
+
+     console.log("Full ingredients response:", ingredientsData);
+
+     // Extract the actual arrays - handle nested structure
+     const steps = stepsData.steps || stepsData || [];
+     const ingredients = ingredientsData.ingredients || []; // ✅ Extract from nested object
+
+     console.log("Extracted ingredients:", ingredients);
+
+     // Set everything at once
+     setRecipeDetails({ steps, ingredients });
+     setIsModalOpen(true);
+   } catch (err) {
+     setError("Failed to load recipe details. Please try again.");
+     console.error(err);
+   } finally {
+     setIsLoading(false);
+   }
+ };
 
   return (
     <>
@@ -87,22 +109,36 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
         </CardContent>
       </Card>
 
-      {/* Render the modal */}
-      <RecipeDetailModal
-        recipe={{ ...recipe, steps }}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
+      {/* Render the modal only if we have details */}
+      {recipeDetails && (
+        <RecipeDetailModal
+          recipe={{
+            ...recipe,
+            steps: recipeDetails.steps,
+            ingredients: recipeDetails.ingredients,
+          }}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
 
       {/* Show loading or error state */}
       {isLoading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-20">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-20 z-50">
           <p className="text-white">Loading...</p>
         </div>
       )}
       {error && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-20">
-          <p className="text-red-500">{error}</p>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-20 z-50">
+          <div className="bg-white p-4 rounded shadow-lg">
+            <p className="text-red-500">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="mt-2 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+            >
+              Close
+            </button>
+          </div>
         </div>
       )}
     </>

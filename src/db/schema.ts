@@ -135,7 +135,7 @@ export const recipeIngredients = sqliteTable(
   {
     recipeId: integer("recipe_id").references(() => recipe.id),
     ingredientId: integer("ingredient_id").references(() => ingredients.id),
-    amount: integer("amount"),
+    amount: integer("amount").notNull(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.recipeId, table.ingredientId] }),
