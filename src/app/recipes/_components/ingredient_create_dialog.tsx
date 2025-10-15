@@ -105,7 +105,7 @@ export default function IngredientCreateDialog({ units, action, onCreated }: Pro
                             id="ing_category"
                             value={categoryName}
                             onChange={(e) => setCategoryName(e.target.value)}
-                            placeholder="z. B. Vegetables"
+                            placeholder="z. B. Gemüse"
                         />
                         <p className="text-xs text-muted-foreground">
                             Neue Kategorien werden automatisch angelegt.

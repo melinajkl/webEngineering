@@ -7,14 +7,14 @@ import {recipe, recipeIngredients, recipeSteps, recipeCat} from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 const IngredientSchema = z.object({
-    recipeIngredientsId: z.coerce.number().min(0),
+    recipeIngredientsId: z.coerce.number().min(1, "Mindestens eine Zutat muss hinzugefügt werden."),
     name: z.string().min(1),
-    quantity: z.coerce.number().min(1),
-    unitId: z.coerce.number().int(),
+    quantity: z.coerce.number().min(1, "Mindestens die Menge 1 muss hinzugefügt werden."),
+    unitId: z.coerce.number().int().min(1, "Maßeinheit muss ausgewählt werden."),
 });
 
 const StepSchema = z.object({
-    text: z.string().min(1),
+    text: z.string().min(1, "Ein Arbeitsschritt muss mindestens einen Buchstaben enthalten."),
 });
 
 const RecipeSchema = z.object({
