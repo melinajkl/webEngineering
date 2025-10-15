@@ -147,7 +147,7 @@ export const recipeIngredients = sqliteTable(
   {
     recipeId: integer("recipe_id").references(() => recipe.id),
     ingredientId: integer("ingredient_id").references(() => ingredients.id),
-    amount: integer("amount"),
+    amount: integer("amount").notNull(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.recipeId, table.ingredientId] }),
@@ -169,8 +169,8 @@ export const recipeAttributes = sqliteTable(
 
 export const recipeSteps = sqliteTable("RECIPE_STEPS", {
   id: integer("id").primaryKey({ autoIncrement: true}),
-  recipeId: integer("recipe_id").references(() => recipe.id),
-  stepNumber: integer("step_number"),
+  recipeId: integer("recipe_id").references(() => recipe.id).notNull(),
+  stepNumber: integer("step_number").notNull(),
   step: text("step").notNull(),
 });
 
