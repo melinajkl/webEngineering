@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { sqliteTable, integer, text, real, primaryKey } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
+import autoprefixer from "autoprefixer";
 
 /**
  * Authentication schema.
@@ -101,7 +102,7 @@ export const recipeCat = sqliteTable("RECIPE_CAT", {
 });
 
 export const ingredientCat = sqliteTable("INGREDIENT_CAT", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey({ autoIncrement: true}),
   name: text("name").notNull(),
 });
 
@@ -176,7 +177,7 @@ export const recipeSteps = sqliteTable("RECIPE_STEPS", {
 // --- SHOPPING LIST TABLE ---
 
 export const shoppingList = sqliteTable("SHOPPING_LIST", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey({ autoIncrement: true}),
   ingredientId: integer("ingredient_id").references(() => ingredients.id),
   dateOfUse: real("date_of_use"),
   amount: integer("amount"),
