@@ -1,216 +1,120 @@
 import { db } from "@/db";
-import {
-  recipe,
-  foodCat,
-  recipeIngredients,
-  ingredients,
-  recipeAttributes,
-  recipeCat,
-  recipeSteps,
-} from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { recipe, foodCat, recipeAttributes, recipeCat } from "@/db/schema";
+import { eq, desc, inArray } from "drizzle-orm";
 
-// Get all recipes with their attributes
-export async function getRecipesWithAttributes() {
-  const recipes = await db
-    .select({
-      id: recipe.id,
-      title: recipe.title,
-      prepareTime: recipe.prepareTime,
-      cookingTime: recipe.cookingTime,
-      portions: recipe.portions,
-      foodCategory: {
-        id: foodCat.id,
-        name: foodCat.name,
-      },
-    })
-    .from(recipe)
-    .leftJoin(foodCat, eq(recipe.foodCategory, foodCat.id));
-
-  // For each recipe, fetch attributes
-  const recipesWithAttributes = await Promise.all(
-    recipes.map(async (r) => {
-      const attrs = await db
-        .select({
-          id: recipeCat.id,
-          name: recipeCat.name,
-        })
-        .from(recipeAttributes)
-        .leftJoin(
-          recipeCat,
-          eq(recipeAttributes.recipeCat, recipeCat.id)
-        )
-        .where(eq(recipeAttributes.recipeId, r.id));
-
-      return {
-        ...r,
-        attributes: attrs,
-      };
-    })
-  );
-
-  return recipesWithAttributes;
+interface GetRecipesParams {
+  page: number;
+  pageSize: number;
 }
 
-// Get all recipes with all details (ingredients, attributes, steps)
-export async function getRecipesWithDetails() {
-  const recipes = await db
-    .select({
-      id: recipe.id,
-      title: recipe.title,
-      prepareTime: recipe.prepareTime,
-      cookingTime: recipe.cookingTime,
-      portions: recipe.portions,
-      foodCategory: {
-        id: foodCat.id,
-        name: foodCat.name,
-      },
-    })
-    .from(recipe)
-    .leftJoin(foodCat, eq(recipe.foodCategory, foodCat.id));
-
-  const recipesWithDetails = await Promise.all(
-    recipes.map(async (r) => {
-      const recipeIngs = await db
-        .select({
-          id: ingredients.id,
-          name: ingredients.name,
-          amount: recipeIngredients.amount,
-        })
-        .from(recipeIngredients)
-        .leftJoin(
-          ingredients,
-          eq(recipeIngredients.ingredientId, ingredients.id)
-        )
-        .where(eq(recipeIngredients.recipeId, r.id));
-
-      const attrs = await db
-        .select({
-          id: recipeCat.id,
-          name: recipeCat.name,
-        })
-        .from(recipeAttributes)
-        .leftJoin(
-          recipeCat,
-          eq(recipeAttributes.recipeCat, recipeCat.id)
-        )
-        .where(eq(recipeAttributes.recipeId, r.id));
-
-      const steps = await db
-        .select({
-          id: recipeSteps.id,
-          stepNumber: recipeSteps.stepNumber,
-          step: recipeSteps.step,
-        })
-        .from(recipeSteps)
-        .where(eq(recipeSteps.recipeId, r.id))
-        .orderBy(recipeSteps.stepNumber);
-
-      return {
-        ...r,
-        ingredients: recipeIngs,
-        attributes: attrs,
-        steps: steps,
-      };
-    })
-  );
-
-  return recipesWithDetails;
+interface RecipeWithAttributes {
+  id: number;
+  title: string;
+  prepareTime: number;
+  cookingTime: number;
+  portions: number;
+  foodCategory: {
+    id: number;
+    name: string | null;
+  } | null;
+  attributes: Array<{
+    id: number;
+    name: string;
+  }>;
 }
 
-// Get a single recipe with food category and attributes
-export async function getRecipeWithDetails(recipeId: number) {
-  const r = await db
+export async function getRecipesWithAttributes({
+  page,
+  pageSize,
+}: GetRecipesParams) {
+  const offset = (page - 1) * pageSize;
+
+  // Get total count
+  const [{ count }] = await db
+    .select({ count: db.$count(recipe) })
+    .from(recipe);
+
+  // First, get paginated recipe IDs only
+  const paginatedRecipeIds = await db
+    .select({ id: recipe.id })
+    .from(recipe)
+    .orderBy(desc(recipe.id))
+    .limit(pageSize)
+    .offset(offset);
+
+  // If no recipes found, return early
+  if (paginatedRecipeIds.length === 0) {
+    return {
+      recipes: [],
+      totalCount: count,
+    };
+  }
+
+  const recipeIds = paginatedRecipeIds.map((r) => r.id);
+
+  // Fetch full data for these specific recipes with joins
+  const data = await db
     .select({
-      id: recipe.id,
+      // Recipe fields
+      recipeId: recipe.id,
       title: recipe.title,
       prepareTime: recipe.prepareTime,
       cookingTime: recipe.cookingTime,
       portions: recipe.portions,
-      foodCategory: {
-        id: foodCat.id,
-        name: foodCat.name,
-      },
+      // Food category fields
+      foodCategoryId: foodCat.id,
+      foodCategoryName: foodCat.name,
+      // Recipe attributes fields
+      attrId: recipeCat.id,
+      attrName: recipeCat.name,
     })
     .from(recipe)
     .leftJoin(foodCat, eq(recipe.foodCategory, foodCat.id))
-    .where(eq(recipe.id, recipeId))
-    .then((rows) => rows[0]);
-
-  if (!r) return null;
-
-  const recipeIngs = await db
-    .select({
-      id: ingredients.id,
-      name: ingredients.name,
-      amount: recipeIngredients.amount,
-    })
-    .from(recipeIngredients)
-    .leftJoin(
-      ingredients,
-      eq(recipeIngredients.ingredientId, ingredients.id)
-    )
-    .where(eq(recipeIngredients.recipeId, recipeId));
-
-  const attrs = await db
-    .select({
-      id: recipeCat.id,
-      name: recipeCat.name,
-    })
-    .from(recipeAttributes)
+    .leftJoin(recipeAttributes, eq(recipe.id, recipeAttributes.recipeId))
     .leftJoin(recipeCat, eq(recipeAttributes.recipeCat, recipeCat.id))
-    .where(eq(recipeAttributes.recipeId, recipeId));
+    .where(inArray(recipe.id, recipeIds))
+    .orderBy(desc(recipe.id));
 
-  const steps = await db
-    .select({
-      id: recipeSteps.id,
-      stepNumber: recipeSteps.stepNumber,
-      step: recipeSteps.step,
-    })
-    .from(recipeSteps)
-    .where(eq(recipeSteps.recipeId, recipeId))
-    .orderBy(recipeSteps.stepNumber);
+  // Transform flat result set into nested structure
+  const recipeMap = new Map<number, RecipeWithAttributes>();
+
+  data.forEach((row) => {
+    const id = row.recipeId;
+
+    if (!recipeMap.has(id)) {
+      recipeMap.set(id, {
+        id,
+        title: row.title,
+        prepareTime: row.prepareTime,
+        cookingTime: row.cookingTime,
+        portions: row.portions,
+        foodCategory: row.foodCategoryId
+          ? {
+              id: row.foodCategoryId,
+              name: row.foodCategoryName,
+            }
+          : null,
+        attributes: [],
+      });
+    }
+
+    // Add attribute if it exists and has a name
+    if (row.attrId && row.attrName) {
+      const recipeRecord = recipeMap.get(id)!;
+      // Avoid duplicates
+      if (!recipeRecord.attributes.some((attr) => attr.id === row.attrId)) {
+        recipeRecord.attributes.push({
+          id: row.attrId,
+          name: row.attrName,
+        });
+      }
+    }
+  });
+
+  const recipes = Array.from(recipeMap.values());
 
   return {
-    ...r,
-    ingredients: recipeIngs,
-    attributes: attrs,
-    steps: steps,
-  };
-}
-
-// Get only recipe with food category and attributes (no ingredients or steps)
-export async function getRecipeWithFoodCatAndAttributes(recipeId: number) {
-  const r = await db
-    .select({
-      id: recipe.id,
-      title: recipe.title,
-      prepareTime: recipe.prepareTime,
-      cookingTime: recipe.cookingTime,
-      portions: recipe.portions,
-      foodCategory: {
-        id: foodCat.id,
-        name: foodCat.name,
-      },
-    })
-    .from(recipe)
-    .leftJoin(foodCat, eq(recipe.foodCategory, foodCat.id))
-    .where(eq(recipe.id, recipeId))
-    .then((rows) => rows[0]);
-
-  if (!r) return null;
-
-  const attrs = await db
-    .select({
-      id: recipeCat.id,
-      name: recipeCat.name,
-    })
-    .from(recipeAttributes)
-    .leftJoin(recipeCat, eq(recipeAttributes.recipeCat, recipeCat.id))
-    .where(eq(recipeAttributes.recipeId, recipeId));
-
-  return {
-    ...r,
-    attributes: attrs,
+    recipes,
+    totalCount: count,
   };
 }

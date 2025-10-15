@@ -4,6 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { IconClock, IconChefHat } from "@tabler/icons-react";
 
+
+// In RecipeCard.tsx
 interface Recipe {
   id: number;
   title: string;
@@ -12,10 +14,10 @@ interface Recipe {
   portions: number;
   foodCategory: {
     id: number;
-    name: string;
+    name: string | null;
   } | null;
   attributes: Array<{
-    id: number | null;
+    id: number;
     name: string | null;
   }>;
 }

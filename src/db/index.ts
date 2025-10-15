@@ -1,9 +1,17 @@
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
+import * as schema from "./schema";
+import "dotenv/config" // 👈 Import your schema definitions
 
-export const db = drizzle({
-  connection: {
-    // biome-ignore lint/style/noNonNullAssertion: We have a .env file so we expect this to be fine
-    url: process.env.DATABASE_URL!,
-  },
-});
+const dbUrl = process.env.DATABASE_URL!;
+
+if (!dbUrl) {
+  throw new Error("DATABASE_URL is not defined");
+}
+
+export const db = drizzle(
+  createClient({
+    url: dbUrl,
+  }),
+  { schema } // 👈 Pass the schema object here
+);
