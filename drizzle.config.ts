@@ -9,12 +9,11 @@ config({ path: ".env" });
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-  schema: "./src/db/schema.ts", // Example path
-  out: "./drizzle", // Example path
-  dialect: "sqlite",
-  dbCredentials: {
-    // This is where Drizzle-Kit gets the URL
-    url: process.env.DATABASE_URL!,
-  },
-  // ... other config
+    dialect: "sqlite",
+    schema: "./src/db/schema.ts",
+    out: "./drizzle",
+
+    dbCredentials: {
+        url: "./src/db/localdb.sqlite",
+    },
 });

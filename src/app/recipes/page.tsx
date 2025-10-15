@@ -1,11 +1,7 @@
 import { NavigationBar } from "@/components/NavigationBar";
 import RecipeOverview from "@/components/RecipeOverview";
 
-interface PageProps {
-  searchParams: Promise<{ page?: string }>;
-}
-
-export default function Page({ searchParams }: PageProps) {
+export default function Page() {
   return (
     <div className="flex flex-col min-h-screen">
       <NavigationBar />
@@ -15,3 +11,5 @@ export default function Page({ searchParams }: PageProps) {
     </div>
   );
 }
+
+
