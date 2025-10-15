@@ -8,6 +8,7 @@ import {recipe, recipeIngredients, recipeSteps, ingredients, recipeCat, foodCat}
 import { eq } from "drizzle-orm";
 
 const IngredientSchema = z.object({
+    recipeIngredientsId: z.coerce.number().min(0),
     name: z.string().min(1),
     quantity: z.coerce.number(),
     unitId: z.coerce.number().int(),
@@ -71,16 +72,17 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
 
             const recipeId = row.id
 
-            /*const { ingredients } = JSON.parse(raw) as { ingredience: { text: number }[] };
+            //{"recipeIngredientsId":14,"name":"Rice","quantity":12,"unitId":1}
+            const { ingredients } = JSON.parse(raw) as { ingredients: { recipeIngredientsId: number, name: string, quantity: number, unitId: number }[] };
             await transfer
                 .insert(recipeIngredients)
-                .values({
-                    ingredients.map((item, amount) => ({
-                        recipeId,                               // FK zum Rezept
-                        ingredientId: ,// FK zur INGREDIENTS.id
-                        amount: amount
+                .values(
+                    ingredients.map((ingredient) => ({
+                        recipeId,
+                        ingredientId: ingredient.recipeIngredientsId,
+                        amount: ingredient.quantity,
                     }))
-            });*/
+                );
 
 
 
@@ -88,6 +90,7 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
             // vorhandene Schritte des Rezepts ersetzen
             await transfer.delete(recipeSteps).where(eq(recipeSteps.recipeId, recipeId));
 
+            // Schritte als Map komplett in DB schreiben
             await transfer.insert(recipeSteps).values(
                 steps.map((s, idx) => ({
                     recipeId,              // FK auf das Rezept (number)
@@ -107,6 +110,7 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
     return { ok: true, message: `Rezept „${raw.toString()} ${parsedRecipe.data.title} ${parsedRecipe.data.cookingTime}  ${parsedRecipe.data.prepareTime} 
      ${parsedRecipe.data.ingredients}  ${parsedRecipe.data.recipeCategory} ${parsedRecipe.data.steps} ${parsedRecipe.data.portions}" entgegengenommen.` };
 }
+//Rezept „{"title":"qwdqdwqwd","portions":2,"prepareTime":15,"cookingTime":30,"foodCategory":1,"recipeCategory":["qwdqwdqwd"],"ingredients":[{"recipeIngredientsId":14,"name":"Rice","quantity":12,"unitId":1},{"recipeIngredientsId":13,"name":"Salmon","quantity":1212,"unitId":1}],"steps":[{"text":"asddasdASDASFASF"},{"text":"WFWAQFEWEAQFEAQF"}]} qwdqdwqwd 30 15 [object Object],[object Object] qwdqwdqwd [object Object],[object Object] 2" entgegengenommen.
 
 
 //„{"title":"Test","portions":2,"prepareTime":15,"cookingTime":30,"foodCategory":1,"recipeCategory":["pasta"],"ingredients":[{"name":"Bier","quantity":0,"unitId":2},{"name":"weizen","quantity":2,"unitId":3}],"steps":[{"text":"asd"}]} Test 30 15 [object Object],[object Object] pasta [object Object] 2" entgegengenommen.
