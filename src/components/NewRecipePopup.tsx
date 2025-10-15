@@ -364,7 +364,7 @@ export default function RecipeForm({
                             {isPending ? <Loader2 className="mr-2 size-4 animate-spin"/> : null}
                             Rezept speichern
                         </Button>
-                        {message && <p className="mt-2 text-sm text-muted-foreground">{message}</p>}
+                        {message && <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">{message}</p>}
                     </div>
                 </CardContent>
             </Card>
