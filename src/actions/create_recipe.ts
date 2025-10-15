@@ -2,9 +2,8 @@
 
 import "server-only";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import {recipe, recipeIngredients, recipeSteps, ingredients, recipeCat, foodCat} from "@/db/schema";
+import {recipe, recipeIngredients, recipeSteps, recipeCat} from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 const IngredientSchema = z.object({
@@ -19,14 +18,14 @@ const StepSchema = z.object({
 });
 
 const RecipeSchema = z.object({
-    title: z.string().min(1),
-    portions: z.coerce.number().int().min(1).max(64),
-    prepareTime: z.coerce.number().int().min(0).max(24 * 60),
-    cookingTime: z.coerce.number().int().min(0).max(24 * 60),
+    title: z.string().min(1, "Titel ist ein Pflichtfeld."),
+    portions: z.coerce.number().int().min(1).max(64, "Bitte Feld Portionen ausfüllen."),
+    prepareTime: z.coerce.number().int().min(0).max(24 * 60, "Mindestens 1 Minute. Maximal 24H Vorbereitungszeit."),
+    cookingTime: z.coerce.number().int().min(0).max(24 * 60, "Mindestens 1 Minute. Maximal 24H Kochzeit."),
     foodCategory: z.coerce.number().int().min(1),
     recipeCategory: z.array(z.string().min(1)).max(20).default([]),
-    ingredients: z.array(IngredientSchema).min(1),
-    steps: z.array(StepSchema).min(1),
+    ingredients: z.array(IngredientSchema).min(1, "Mindestens eine Zutat muss hinzugefügt werden."),
+    steps: z.array(StepSchema).min(1, "Mindestens ein Arbeitsschritt muss hinzugefügt werden."),
 });
 
 
@@ -41,6 +40,7 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
         return {ok: false, error: "Payload missing"};
     }
 
+    //Error Handling
     let parsedRecipe: ReturnType<typeof RecipeSchema.safeParse>;
     try {
         parsedRecipe = RecipeSchema.safeParse(JSON.parse(raw));
@@ -48,20 +48,24 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
         return {ok: false, error: "Payload is not valid JSON"};
     }
     if (!parsedRecipe.success) {
-        return {ok: false, error: parsedRecipe.error.issues[0]?.message ?? "Invalid input"};
+        const msg = parsedRecipe.error.issues
+            .map((issue) => `${issue.message}`).join("\n");
+        return { ok: false, error: msg };
     }
+
 
     //DB operation
     try {
         await db.transaction(async (transfer) => {
 
-
+            // Rezeptcategory in die Datenbank eintragen
             await transfer.insert(recipeCat).values(
                 parsedRecipe.data.recipeCategory.map((s) => ({
                     name: s.trim(),
                 })),
             ).onConflictDoNothing();
 
+            //Rezept in die Datenbank eintragen.
             const [row] = await transfer.insert(recipe).values({
                 title: parsedRecipe.data.title,
                 foodCategory: parsedRecipe.data.foodCategory,
@@ -72,7 +76,7 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
 
             const recipeId = row.id
 
-            //{"recipeIngredientsId":14,"name":"Rice","quantity":12,"unitId":1}
+            //Zutaten in die Datenbank eintragen.
             const { ingredients } = JSON.parse(raw) as { ingredients: { recipeIngredientsId: number, quantity: number, unitId: number }[] };
             await transfer
                 .insert(recipeIngredients)
@@ -83,7 +87,6 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
                         amount: ingredient.quantity,
                     }))
                 );
-
 
 
             const {steps} = JSON.parse(raw) as { steps: { text: string }[] };
@@ -107,8 +110,7 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
 
 
     // >>> HIER: immer etwas zurückgeben
-    return { ok: true, message: `Rezept „${raw.toString()} ${parsedRecipe.data.title} ${parsedRecipe.data.cookingTime}  ${parsedRecipe.data.prepareTime} 
-     ${parsedRecipe.data.ingredients}  ${parsedRecipe.data.recipeCategory} ${parsedRecipe.data.steps} ${parsedRecipe.data.portions}" entgegengenommen.` };
+    return { ok: true, message: `Rezept „${parsedRecipe.data.title}" wurde erfolgreich entgegengenommen.` };
 }
 //Rezept „{"title":"qwdqdwqwd","portions":2,"prepareTime":15,"cookingTime":30,"foodCategory":1,"recipeCategory":["qwdqwdqwd"],"ingredients":[{"recipeIngredientsId":14,"name":"Rice","quantity":12,"unitId":1},{"recipeIngredientsId":13,"name":"Salmon","quantity":1212,"unitId":1}],"steps":[{"text":"asddasdASDASFASF"},{"text":"WFWAQFEWEAQFEAQF"}]} qwdqdwqwd 30 15 [object Object],[object Object] qwdqwdqwd [object Object],[object Object] 2" entgegengenommen.
 
