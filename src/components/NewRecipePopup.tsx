@@ -77,18 +77,26 @@ export default function RecipeForm({
     const [message, setMessage] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
 
-    // Zutatenzeile einfügen
+    // Neue leere Zutatenzeile einfügen
     const addIngredient = () => setIngredients((arr) => [...arr, {
         recipeIngredientsId: 0,
         name: "",
         quantity: 0,
         unitId: 0
     }]);
-    // Zutatenzeile entfernen
-    const removeIngredient = (i: number) => setIngredients((arr) => arr.filter((_, idx) => idx !== i));
-    // Zutatenzeile updaten
-    const updateIngredient = (i: number, patch: Partial<Ingredient>) => setIngredients((arr) => arr.map((it, idx) => (idx === i ? {...it, ...patch} : it)));
+    // Zeile an Position "index" löschen
+        function removeIngredient(index: number) {
+            setIngredients((prev) => prev.filter((_, i) => i !== index));
+        }
 
+    // Zeile an Position "index" teilweise aktualisieren
+        function updateIngredient(index: number, patch: Partial<Ingredient>) {
+            setIngredients((prev) => {
+                const next = [...prev];
+                next[index] = { ...next[index], ...patch };
+                return next;
+            });
+        }
     //Auswahl einer Zutat
     const onSelectIngredient = (rowIndex: number, idString: string) => {
         const id = Number(idString);
@@ -101,12 +109,22 @@ export default function RecipeForm({
         });
     };
 
-
-    const addStep = () => setSteps((arr) => [...arr, {text: ""}]);
-    const removeStep = (i: number) => setSteps((arr) => arr.filter((_, idx) => idx !== i));
-    const updateStep = (i: number, text: string) =>
-        setSteps((arr) => arr.map((it, idx) => (idx === i ? {text} : it)));
-
+    //Neuen leeren Schritt anhängen
+    function addStep() {
+        setSteps([...steps, { text: "" }]);
+    }
+    //Schritt entfernen
+    function removeStep(index: number) {
+        const next = [...steps];
+        next.splice(index, 1);
+        setSteps(next);
+    }
+    //Überschreibt den aktuellen Schritt an index Nr
+    function updateStep(index: number, text: string) {
+        const next = [...steps];
+        next[index] = { ...next[index], text };
+        setSteps(next);
+    }
     return (
         <form
             className="grid gap-6 "
@@ -144,11 +162,11 @@ export default function RecipeForm({
                 });
             }}
         >
-            <Card className="rounded-2xl shadow-sm max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl">
+            <Card
+                className="rounded-2xl shadow-sm max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl">
                 <CardHeader>
                     <CardTitle className="text-xl">Rezept</CardTitle>
                 </CardHeader>
-
                 <CardContent className="grid gap-6">
                     {/* Titel */}
                     <div className="grid gap-2">

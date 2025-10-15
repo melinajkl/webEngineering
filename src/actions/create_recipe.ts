@@ -10,7 +10,7 @@ import { eq } from "drizzle-orm";
 const IngredientSchema = z.object({
     recipeIngredientsId: z.coerce.number().min(0),
     name: z.string().min(1),
-    quantity: z.coerce.number(),
+    quantity: z.coerce.number().min(1),
     unitId: z.coerce.number().int(),
 });
 
@@ -73,7 +73,7 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
             const recipeId = row.id
 
             //{"recipeIngredientsId":14,"name":"Rice","quantity":12,"unitId":1}
-            const { ingredients } = JSON.parse(raw) as { ingredients: { recipeIngredientsId: number, name: string, quantity: number, unitId: number }[] };
+            const { ingredients } = JSON.parse(raw) as { ingredients: { recipeIngredientsId: number, quantity: number, unitId: number }[] };
             await transfer
                 .insert(recipeIngredients)
                 .values(
