@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { recipe, foodCat, recipeAttributes, recipeCat } from "@/db/schema";
+import { recipe, foodCat, recipeAttributes, recipeCat, recipeSteps } from "@/db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 
 interface GetRecipesParams {
@@ -20,6 +20,14 @@ interface RecipeWithAttributes {
   attributes: Array<{
     id: number;
     name: string;
+  }>;
+}
+
+interface RecipeSteps {
+  recipeId: number,
+  steps: Array<{
+    stepnumber: number;
+    description: string;
   }>;
 }
 
@@ -117,4 +125,19 @@ export async function getRecipesWithAttributes({
     recipes,
     totalCount: count,
   };
+}
+
+export async function getRecipeStepsById(id_: number): Promise<RecipeSteps> {
+  const steps = await db.select( {
+    stepnumber: recipeSteps.stepNumber,
+    description: recipeSteps.step,
+})
+.from(recipeSteps)
+.where(eq(recipeSteps.recipeId, id_))
+.orderBy(recipeSteps.stepNumber)
+
+return {
+  recipeId: id_,
+  steps
+}
 }
