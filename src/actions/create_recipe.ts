@@ -40,6 +40,7 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
         return {ok: false, error: "Payload missing"};
     }
 
+    //Error Handling
     let parsedRecipe: ReturnType<typeof RecipeSchema.safeParse>;
     try {
         parsedRecipe = RecipeSchema.safeParse(JSON.parse(raw));
