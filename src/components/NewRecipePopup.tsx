@@ -94,7 +94,6 @@ export default function RecipeForm({
         const id = Number(idString);
         const row = ingredientOptions.find((opt) => opt.id === id);
         const nextUnitId = row?.unitId;
-
         updateIngredient(rowIndex, {
             recipeIngredientsId: id,
             name: row?.name,
@@ -110,7 +109,7 @@ export default function RecipeForm({
 
     return (
         <form
-            className="grid gap-6"
+            className="grid gap-6 "
             action={(fd) => {
                 const payload: CreateRecipeInput = {
                     title,
@@ -145,7 +144,7 @@ export default function RecipeForm({
                 });
             }}
         >
-            <Card className="rounded-2xl shadow-sm">
+            <Card className="rounded-2xl shadow-sm max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl">
                 <CardHeader>
                     <CardTitle className="text-xl">Rezept</CardTitle>
                 </CardHeader>
@@ -272,7 +271,7 @@ export default function RecipeForm({
                                         <SelectTrigger>
                                             <SelectValue placeholder="Zutat wählen"/>
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent position="popper" className="max-h-64">
                                             {ingredientOptions.map((opt) => (
                                                 <SelectItem key={opt.id} value={String(opt.id)}>
                                                     {opt.name}
