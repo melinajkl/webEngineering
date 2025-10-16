@@ -1,6 +1,8 @@
 import { sql } from "drizzle-orm";
 import { sqliteTable, integer, text, real, primaryKey } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
+import autoprefixer from "autoprefixer";
+
 /**
  * Authentication schema.
  *
@@ -90,30 +92,40 @@ export const verification = sqliteTable("verification", {
 // --- CATEGORY TABLES ---
 
 export const foodCat = sqliteTable("FOOD_CAT", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey({autoIncrement: true}),
   name: text("name").notNull(),
 });
 
 export const recipeCat = sqliteTable("RECIPE_CAT", {
-  id: integer("id").primaryKey(),
-  name: text("name").notNull(),
+  id: integer("id").primaryKey({autoIncrement: true}),
+  name: text("name").notNull().unique(),
 });
 
 export const ingredientCat = sqliteTable("INGREDIENT_CAT", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey({ autoIncrement: true}),
   name: text("name").notNull(),
 });
 
 export const unit = sqliteTable("UNIT", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey({autoIncrement: true}), //// evtl shortForm als PK
   name: text("name").notNull(),
   shortForm: text("short_form"),
 });
 
+/*INSERT OR IGNORE INTO "UNIT" ("name","short_form") VALUES
+ ('Gramm','g'),
+ ('Kilogramm','kg'),
+ ('Milliliter','ml'),
+ ('Liter','l'),
+ ('Teelöffel','TL'),
+ ('Esslöffel','EL'),
+ ('Stück','stk');
+*/
+
 // --- MAIN TABLES ---
 
 export const recipe = sqliteTable("RECIPE", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey({ autoIncrement: true}),
   title: text("title").notNull(),
   prepareTime: integer("prepare_time").notNull(),
   cookingTime: integer("cooking_time").notNull(),
@@ -122,7 +134,7 @@ export const recipe = sqliteTable("RECIPE", {
 });
 
 export const ingredients = sqliteTable("INGREDIENTS", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey( {autoIncrement: true}),
   name: text("name").notNull(),
   category: integer("category").references(() => ingredientCat.id).notNull(),
   unit: integer("unit").references(() => unit.id).notNull(),
@@ -135,7 +147,7 @@ export const recipeIngredients = sqliteTable(
   {
     recipeId: integer("recipe_id").references(() => recipe.id),
     ingredientId: integer("ingredient_id").references(() => ingredients.id),
-    amount: integer("amount"),
+    amount: integer("amount").notNull(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.recipeId, table.ingredientId] }),
@@ -156,16 +168,16 @@ export const recipeAttributes = sqliteTable(
 // --- STEP TABLE ---
 
 export const recipeSteps = sqliteTable("RECIPE_STEPS", {
-  id: integer("id").primaryKey(),
-  recipeId: integer("recipe_id").references(() => recipe.id),
-  stepNumber: integer("step_number"),
+  id: integer("id").primaryKey({ autoIncrement: true}),
+  recipeId: integer("recipe_id").references(() => recipe.id).notNull(),
+  stepNumber: integer("step_number").notNull(),
   step: text("step").notNull(),
 });
 
 // --- SHOPPING LIST TABLE ---
 
 export const shoppingList = sqliteTable("SHOPPING_LIST", {
-  id: integer("id").primaryKey(),
+  id: integer("id").primaryKey({autoincrement : true}),
   ingredientId: integer("ingredient_id").references(() => ingredients.id).notNull(),
   dateOfUse: real("date_of_use").notNull(),
   amount: integer("amount").notNull(),
