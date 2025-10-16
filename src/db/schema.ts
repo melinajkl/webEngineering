@@ -124,8 +124,8 @@ export const recipe = sqliteTable("RECIPE", {
 export const ingredients = sqliteTable("INGREDIENTS", {
   id: integer("id").primaryKey(),
   name: text("name").notNull(),
-  category: integer("category").references(() => ingredientCat.id),
-  unit: integer("unit").references(() => unit.id),
+  category: integer("category").references(() => ingredientCat.id).notNull(),
+  unit: integer("unit").references(() => unit.id).notNull(),
 });
 
 // --- RELATION TABLES ---
@@ -166,11 +166,11 @@ export const recipeSteps = sqliteTable("RECIPE_STEPS", {
 
 export const shoppingList = sqliteTable("SHOPPING_LIST", {
   id: integer("id").primaryKey(),
-  ingredientId: integer("ingredient_id").references(() => ingredients.id),
-  dateOfUse: real("date_of_use"),
-  amount: integer("amount"),
-  unitId: integer("unitId").references(() => unit.id),
-  checked: integer("checked", { mode: "boolean" }),
+  ingredientId: integer("ingredient_id").references(() => ingredients.id).notNull(),
+  dateOfUse: real("date_of_use").notNull(),
+  amount: integer("amount").notNull(),
+  unitId: integer("unitId").references(() => unit.id).notNull(),
+  checked: integer("checked", { mode: "boolean" }).notNull(),
 });
 
 // --- CALENDAR TABLE ---

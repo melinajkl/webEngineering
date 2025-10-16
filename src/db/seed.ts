@@ -1,4 +1,3 @@
-import "dotenv/config"
 import { db } from "@/db"; // adjust path to your Drizzle instance
 import {
   foodCat,
