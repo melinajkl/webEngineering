@@ -84,6 +84,7 @@ export default function RecipeForm({
         quantity: 0,
         unitId: 0
     }]);
+
     // Zeile an Position "index" löschen
         function removeIngredient(index: number) {
             setIngredients((prev) => prev.filter((_, i) => i !== index));
@@ -304,9 +305,15 @@ export default function RecipeForm({
                                 <Input
                                     className="md:col-span-2"
                                     placeholder="Menge"
+                                    inputMode="numeric"
                                     value={ing.quantity ?? ""}
-                                    onChange={(e) => updateIngredient(i, {quantity: Number(e.target.value)})}
+                                    onChange={(e) => {
+                                        const v = e.currentTarget.value;
+                                        if (!/^\d*$/.test(v)) return;
+                                        updateIngredient(i, { quantity: v === "" ? undefined : Number(v) });
+                                    }}
                                 />
+
 
                                 {/* Unit dropdown */}
                                 <div className="md:col-span-2">
