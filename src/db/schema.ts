@@ -109,7 +109,7 @@ export const ingredientCat = sqliteTable("INGREDIENT_CAT", {
 export const unit = sqliteTable("UNIT", {
   id: integer("id").primaryKey({autoIncrement: true}), //// evtl shortForm als PK
   name: text("name").notNull(),
-  shortForm: text("short_form"),
+  shortForm: text("short_form").notNull(),
 });
 
 /*INSERT OR IGNORE INTO "UNIT" ("name","short_form") VALUES
@@ -177,7 +177,7 @@ export const recipeSteps = sqliteTable("RECIPE_STEPS", {
 // --- SHOPPING LIST TABLE ---
 
 export const shoppingList = sqliteTable("SHOPPING_LIST", {
-  id: integer("id").primaryKey({autoincrement : true}),
+  id: integer("id").primaryKey({autoIncrement : true}),
   ingredientId: integer("ingredient_id").references(() => ingredients.id).notNull(),
   dateOfUse: real("date_of_use").notNull(),
   amount: integer("amount").notNull(),

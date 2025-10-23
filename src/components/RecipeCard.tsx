@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { IconClock, IconChefHat } from "@tabler/icons-react";
 import { useState } from "react";
 import { RecipeDetailModal } from "@/components/RecipeDetailModal";
+import { getRecipeIngredientsAction } from "@/actions/get_recipe_ingredients";
+import { getRecipeStepsAction } from "@/actions/get_recipe_steps";
 
 interface Recipe {
   id: number;
@@ -34,41 +36,43 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
- const handleClick = async () => {
-   setIsLoading(true);
-   setError(null);
-   try {
-     // Fetch both in parallel
-     const [stepsResponse, ingredientsResponse] = await Promise.all([
-       fetch(`/api/recipe/${recipe.id}/steps`),
-       fetch(`/api/recipe/${recipe.id}/ingredients`),
-     ]);
+  const handleClick = async () => {
+    setIsLoading(true);
+    setError(null);
 
-     if (!stepsResponse.ok || !ingredientsResponse.ok) {
-       throw new Error("Failed to fetch recipe details!");
-     }
+    try {
+      // Fetch both using actions in parallel
+      const [stepsResult, ingredientsResult] = await Promise.all([
+        getRecipeStepsAction(recipe.id),
+        getRecipeIngredientsAction(recipe.id),
+      ]);
 
-     const stepsData = await stepsResponse.json();
-     const ingredientsData = await ingredientsResponse.json();
+      // Validate both results
+      if (!stepsResult?.success || !ingredientsResult?.success) {
+        throw new Error("Failed to load recipe details!");
+      }
+        console.log("IngredientsResult: ", ingredientsResult)
+      // Ensure data is an array
+      const steps = Array.isArray(stepsResult.data?.steps) ? stepsResult.data.steps : [];
+      const ingredients = Array.isArray(ingredientsResult.data?.ingredients)
+        ? ingredientsResult.data.ingredients.filter(
+            (ing) => ing.ingredientname && ing.unit
+          )
+        : [];
 
-     console.log("Full ingredients response:", ingredientsData);
+      console.log("Steps:", steps);
+      console.log("Ingredients:", ingredients);
 
-     // Extract the actual arrays - handle nested structure
-     const steps = stepsData.steps || stepsData || [];
-     const ingredients = ingredientsData.ingredients || []; // ✅ Extract from nested object
-
-     console.log("Extracted ingredients:", ingredients);
-
-     // Set everything at once
-     setRecipeDetails({ steps, ingredients });
-     setIsModalOpen(true);
-   } catch (err) {
-     setError("Failed to load recipe details. Please try again.");
-     console.error(err);
-   } finally {
-     setIsLoading(false);
-   }
- };
+      // Update state all at once
+      setRecipeDetails({ steps, ingredients });
+      setIsModalOpen(true);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load recipe details. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <>
