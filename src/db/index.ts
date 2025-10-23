@@ -5,6 +5,7 @@ import "dotenv/config" // 👈 Import your schema definitions
 
 const dbUrl = process.env.DATABASE_URL!;
 
+//const dbUrl = "file:./src/db/localdb.sqlite"; //Activieren um die seeds in db zu schreiben
 if (!dbUrl) {
   throw new Error("DATABASE_URL is not defined");
 }

@@ -11,7 +11,7 @@ import { ingredients } from "@/db/schema";
 
 const CreateIngredientSchema = z.object({
     name: z.string().trim().min(1, "Name erforderlich"),
-    unitId: z.coerce.number().int().positive(),
+    unitId: z.coerce.number().int().positive().min(1, "Maßeinheit muss Ausgewählt werden."),
 });
 
 export type CreateIngredientResult =

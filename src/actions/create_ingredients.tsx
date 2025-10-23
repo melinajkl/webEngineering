@@ -15,19 +15,19 @@ import { sql } from "drizzle-orm";
 const CreateIngredientSchema = z.object({
     name: z.string().trim().min(1, "Name erforderlich"),
     categoryName: z.string().trim().min(1, "Kategorie erforderlich"),
-    unitId: z.coerce.number().int().positive(),
+    unitId: z.coerce.number().int().positive().min(1, "Eine Maßeinheit muss Ausgewählt werden."),
 });
 
 export type CreateIngredientResult =
-    | {
+    {
     ok: true;
     id: number;
     name: string;
     unitId: number | null;
     categoryId: number;
-    message?: string;
+    message: string;
 }
-    | { ok: false; error: string };
+    | {  error: string };
 
 function normalizeLabel(s: string): string {
     return s.trim().replace(/\s+/g, " ");
@@ -40,8 +40,11 @@ export async function createIngredientAction(formData: FormData): Promise<Create
         unitId: formData.get("unitId"),
     });
 
+
     if (!parse.success) {
-        return { ok: false, error: parse.error.issues[0]?.message ?? "Ungültige Eingabe" };
+        const msg = parse.error.issues
+            .map((issue) => `${issue.message}`).join("\n");
+        return { error: msg };
     }
 
     const name = normalizeLabel(parse.data.name);

@@ -3,18 +3,18 @@
 import "server-only";
 import { z } from "zod";
 import { db } from "@/db";
-import {recipe, recipeIngredients, recipeSteps, recipeCat} from "@/db/schema";
-import { eq } from "drizzle-orm";
+import {recipe, recipeIngredients, recipeSteps, recipeCat, recipeAttributes} from "@/db/schema";
+import {eq, inArray } from "drizzle-orm";
 
 const IngredientSchema = z.object({
-    recipeIngredientsId: z.coerce.number().min(0),
+    recipeIngredientsId: z.coerce.number().min(1, "Mindestens eine Zutat muss hinzugefügt werden."),
     name: z.string().min(1),
-    quantity: z.coerce.number().min(1),
-    unitId: z.coerce.number().int(),
+    quantity: z.coerce.number().min(1, "Mindestens die Menge 1 muss hinzugefügt werden."),
+    unitId: z.coerce.number().int().min(1, "Maßeinheit muss ausgewählt werden."),
 });
 
 const StepSchema = z.object({
-    text: z.string().min(1),
+    text: z.string().min(1, "Ein Arbeitsschritt muss mindestens einen Buchstaben enthalten."),
 });
 
 const RecipeSchema = z.object({
@@ -58,15 +58,9 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
     try {
         await db.transaction(async (transfer) => {
 
-            // Rezeptcategory in die Datenbank eintragen
-            await transfer.insert(recipeCat).values(
-                parsedRecipe.data.recipeCategory.map((s) => ({
-                    name: s.trim(),
-                })),
-            ).onConflictDoNothing();
 
             //Rezept in die Datenbank eintragen.
-            const [row] = await transfer.insert(recipe).values({
+            const [rowRecipe] = await transfer.insert(recipe).values({
                 title: parsedRecipe.data.title,
                 foodCategory: parsedRecipe.data.foodCategory,
                 prepareTime: parsedRecipe.data.prepareTime,
@@ -74,7 +68,7 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
                 portions: parsedRecipe.data.portions
             }).returning({id: recipe.id});
 
-            const recipeId = row.id
+            const recipeId = rowRecipe.id
 
             //Zutaten in die Datenbank eintragen.
             const { ingredients } = JSON.parse(raw) as { ingredients: { recipeIngredientsId: number, quantity: number, unitId: number }[] };
@@ -88,6 +82,30 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
                     }))
                 );
 
+
+            // Rezeptcategory in die Datenbank eintragen
+            await transfer.insert(recipeCat).values(
+                parsedRecipe.data.recipeCategory.map((recipeCatName) => ({
+                    name: recipeCatName.trim(),
+                })),
+            )
+                .onConflictDoNothing({target: recipeCat.name});
+
+            const existing = await transfer
+                .select({ id: recipeCat.id })
+                .from(recipeCat)
+                .where(inArray(recipeCat.name, parsedRecipe.data.recipeCategory));
+
+            if (existing.length > 0) {
+                await transfer
+                    .insert(recipeAttributes)
+                    .values(
+                        existing.map(({id}) => ({
+                            recipeId,
+                            recipeCat: id,
+                        }))
+                    ).onConflictDoNothing();
+            }
 
             const {steps} = JSON.parse(raw) as { steps: { text: string }[] };
             // vorhandene Schritte des Rezepts ersetzen
