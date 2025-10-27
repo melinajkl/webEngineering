@@ -6,6 +6,7 @@ import { enUS } from "date-fns/locale";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {LucideCircleChevronLeft, LucideCircleChevronRight} from "lucide-react";
+import { RecipeCard } from "@/components/ui/DayCard";
 
 
 interface CalendarEvent {
@@ -22,6 +23,21 @@ const sampleEvents: CalendarEvent[] = [
     { date: "2025-10-01", title: "Projekt Kickoff", color: `${colorBreakfast}` },
     { date: "2025-10-01", title: "Release Meeting", color: `${colorLunch}` },
     { date: "2025-10-01", title: "Feiertag", color: ` ${colorDinner}` },
+    { date: "2025-10-01", title: "Projekt Kickoff", color: `${colorBreakfast}` },
+    { date: "2025-10-01", title: "Release Meeting", color: `${colorLunch}` },
+    { date: "2025-10-02", title: "Feiertag", color: ` ${colorDinner}` },
+    { date: "2025-10-02", title: "Projekt Kickoff", color: `${colorBreakfast}` },
+    { date: "2025-10-02", title: "Release Meeting", color: `${colorLunch}` },
+    { date: "2025-10-02", title: "Feiertag", color: ` ${colorDinner}` },
+    { date: "2025-10-03", title: "Projekt Kickoff", color: `${colorBreakfast}` },
+    { date: "2025-10-04", title: "Release Meeting", color: `${colorLunch}` },
+    { date: "2025-10-09", title: "Feiertag", color: ` ${colorDinner}` },
+    { date: "2025-10-09", title: "Projekt Kickoff", color: `${colorBreakfast}` },
+    { date: "2025-10-09", title: "Release Meeting", color: `${colorLunch}` },
+    { date: "2025-10-09", title: "Feiertag", color: ` ${colorDinner}` },
+    { date: "2025-10-21", title: "Projekt Kickoff", color: `${colorBreakfast}` },
+    { date: "2025-10-21", title: "Release Meeting", color: `${colorLunch}` },
+    { date: "2025-10-21", title: "Feiertag", color: ` ${colorDinner}` },
 ];
 
 export function CalendarPage() {
@@ -57,8 +73,8 @@ export function CalendarPage() {
 
     return (
         <div className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
-                <button onClick={handlePrevMonth} className=" flex items-center gap-2 px-2 py-1 text-muted-foreground hover:text-foreground transition-colors">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0 text-sm sm:text-base">
+            <button onClick={handlePrevMonth} className=" flex items-center gap-2 px-2 py-1 text-muted-foreground hover:text-foreground transition-colors">
                     <LucideCircleChevronLeft className="size-5" />
                     <span className="text-sm font-medium">
                         {lastMonthLabel}
@@ -70,23 +86,22 @@ export function CalendarPage() {
                 </h1>
 
                 <button onClick={handleNextMonth} className="flex items-center gap-2 px-2 py-1 text-muted-foreground hover:text-foreground transition-colors">
-                    <div>
-                        <span className="text-sm font-medium">
-                            {nextMonthLabel}
-                        </span>
-                        <LucideCircleChevronRight className="size-5" />
-                    </div>
+                    <span className="text-sm font-medium">
+                        {nextMonthLabel}
+                    </span>
+                    <LucideCircleChevronRight className="size-5" />
+
                 </button>
             </div>
 
-            <div className="grid grid-cols-7 text-center font-medium text-sm text-muted-foreground">
-                {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((d) => (
+            <div className="grid grid-cols-7 text-[10px] sm:text-xs font-medium text-muted-foreground items-center text-center">
+            {["Mon", "Tue", "Wed", "Thurs", "Fri", "Sat", "Sun"].map((d) => (
                     <div key={d}>{d}</div>
                 ))}
             </div>
 
             {/* Grid der Tage */}
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-2 sm:gap-3 text-xs sm:text-sm">
                 {days.map((day) => {
                     const dayOfWeek = getDay(day) || 1; // Monday = 1
                     const events = sampleEvents.filter(
@@ -96,23 +111,20 @@ export function CalendarPage() {
                     return (
                         <Card
                             key={day.toISOString()}
-                            className={cn(
-                                "h-28 p-2 text-sm flex flex-col justify-between",
-                                dayOfWeek === 7 && "border-destructive/30"
-                            )}
+                            className={"h-20 sm:h-32 p-1 sm:p-2 text-[10px] sm:text-sm flex flex-col justify-self-auto hover:shadow-lg transition-shadow cursor-pointer"}
                         >
                             <CardHeader className="p-0">
                                 <CardTitle className="text-xs font-medium">
                                     {format(day, "d")}
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="p-0 space-y-1 overflow-hidden">
+                            <CardContent className="p-0 space-y-[2px] overflow-y-auto max-h-14 sm:max-h-24">
                                 {events.map((ev, i) => (
                                     <div
                                         key={i}
                                         className={cn(
-                                            "text-xs text-white rounded px-1 truncate",
-                                            ev.color ?? "bg-primary"
+                                            "text-xs rounded px-1 truncate",
+                                            ev.color
                                         )}
                                     >
                                         {ev.title}
