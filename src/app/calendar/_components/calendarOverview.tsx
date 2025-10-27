@@ -6,11 +6,9 @@ import { enUS } from "date-fns/locale";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import {LucideCircleChevronLeft, LucideCircleChevronRight} from "lucide-react";
-import { RecipeCard } from "@/components/ui/DayCard";
-
 
 interface CalendarEvent {
-    date: string; // ISO string (YYYY-MM-DD)
+    date: string; // String Datenbank (YYYY-MM-DD)
     title: string;
     color?: string;
 }
@@ -111,7 +109,9 @@ export function CalendarPage() {
                     return (
                         <Card
                             key={day.toISOString()}
+                            onClick={() => alert(`Clicked ${format(day, "dd.MM.yyyy")}`)}
                             className={"h-20 sm:h-32 p-1 sm:p-2 text-[10px] sm:text-sm flex flex-col justify-self-auto hover:shadow-lg transition-shadow cursor-pointer"}
+
                         >
                             <CardHeader className="p-0">
                                 <CardTitle className="text-xs font-medium">
@@ -133,7 +133,9 @@ export function CalendarPage() {
                             </CardContent>
                         </Card>
                     );
+
                 })}
+
             </div>
         </div>
     );
