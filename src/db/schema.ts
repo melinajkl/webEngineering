@@ -112,16 +112,6 @@ export const unit = sqliteTable("UNIT", {
   shortForm: text("short_form").notNull(),
 });
 
-/*INSERT OR IGNORE INTO "UNIT" ("name","short_form") VALUES
- ('Gramm','g'),
- ('Kilogramm','kg'),
- ('Milliliter','ml'),
- ('Liter','l'),
- ('Teelöffel','TL'),
- ('Esslöffel','EL'),
- ('Stück','stk');
-*/
-
 // --- MAIN TABLES ---
 
 export const recipe = sqliteTable("RECIPE", {

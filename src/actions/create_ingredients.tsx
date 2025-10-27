@@ -26,12 +26,13 @@ export type CreateIngredientResult =
     unitId: number | null;
     categoryId: number;
     message: string;
-}
-    | {  error: string };
+} | {  error: string };
 
 function normalizeLabel(s: string): string {
     return s.trim().replace(/\s+/g, " ");
 }
+
+const errorMsg = "Something went wrong";
 
 export async function createIngredientAction(formData: FormData): Promise<CreateIngredientResult> {
     const parse = CreateIngredientSchema.safeParse({
@@ -124,6 +125,6 @@ export async function createIngredientAction(formData: FormData): Promise<Create
         };
     } catch (e) {
         console.error(e);
-        return { ok: false, error: "DB-Fehler beim Anlegen der Zutat" };
+        return { ok: false, error: errorMsg}; // "DB-Fehler beim Anlegen der Zutat" };
     }
 }

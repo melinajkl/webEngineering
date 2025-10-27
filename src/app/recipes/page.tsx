@@ -12,7 +12,7 @@ export default function Page({ searchParams }: PageProps) {
       <NavigationBar />
       <div className="bg-gray-50 p-8">
         <div className="container grid-cols-3 overflow-auto p-3 max-w-7xl mx-auto">
-          <OpenCreateRecipeButton label="Rezept erstellen" />
+          <OpenCreateRecipeButton label="Add recipe" />
         </div>
         <div className="flex-1 overflow-auto">
           <RecipeOverview searchParams={searchParams} />

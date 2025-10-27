@@ -260,7 +260,7 @@ export default function RecipeForm({
                         <div className="flex items-center justify-between">
                             <Label>Zutaten</Label>
                             <div className="flex items-center gap-2 ">
-                                {/* Neue Zutat (opens popup) — with free-text category upsert */}
+                                {/* Neue Zutat */}
                                 <IngredientCreateDialog
                                     units={initialUnits}
                                     action={createIngredientAction}

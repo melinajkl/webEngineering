@@ -13,7 +13,7 @@ import type { IngredientCategoryRow } from "@/db/queries/getIngredientCategories
 import type { CreateIngredientResult } from "@/actions/create_ingredients";
 
 type Props = {
-    label?: string;
+    label: string;
     action: (fd: FormData) => Promise<{ ok: boolean; id?: string; message?: string; error?: string }>;
     unitsPromise: Promise<UnitRow[]>;
     foodCategoryPromise: Promise<FoodCategoryRow[]>;
@@ -25,7 +25,7 @@ type Props = {
 export default function RecipeFormDialogButton(props: Props) {
     const [open, setOpen] = useState(false);
     const {
-        label = "Rezept erstellen",
+        label = "Add recipe",
         action,
         unitsPromise,
         foodCategoryPromise,

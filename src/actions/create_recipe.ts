@@ -28,6 +28,7 @@ const RecipeSchema = z.object({
     steps: z.array(StepSchema).min(1, "Mindestens ein Arbeitsschritt muss hinzugefügt werden."),
 });
 
+const errorMsg = "Something went wrong";
 
 export type CreateRecipeInput = z.infer<typeof RecipeSchema>;
 export type CreateRecipeResult =
@@ -36,16 +37,17 @@ export type CreateRecipeResult =
 
 export async function createRecipeAction(formData: FormData): Promise<CreateRecipeResult> {
     const raw = formData.get("payload");
-    if (typeof raw !== "string") {
-        return {ok: false, error: "Payload missing"};
-    }
 
     //Error Handling
+    if (typeof raw !== "string") {
+        return {ok: false, error: errorMsg};  /// "Payload missing"};
+    }
+    //Parse Payload
     let parsedRecipe: ReturnType<typeof RecipeSchema.safeParse>;
     try {
         parsedRecipe = RecipeSchema.safeParse(JSON.parse(raw));
     } catch {
-        return {ok: false, error: "Payload is not valid JSON"};
+        return {ok: false, error: errorMsg }; //"Payload is not valid JSON"};
     }
     if (!parsedRecipe.success) {
         const msg = parsedRecipe.error.issues
@@ -114,25 +116,20 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
             // Schritte als Map komplett in DB schreiben
             await transfer.insert(recipeSteps).values(
                 steps.map((s, idx) => ({
-                    recipeId,              // FK auf das Rezept (number)
-                    stepNumber: idx + 1,   // 1, 2, 3, ...
-                    step: s.text.trim(),   // Text des Schritts
+                    recipeId,              // FK from Recipe number
+                    stepNumber: idx + 1,   // Step Number
+                    step: s.text.trim(),   // Step Text
                 })),
             );
 
 
 
         });
-    } catch (e) {}
+    } catch {
+        return {ok: false, error: errorMsg};
+    }
 
 
-
-    // >>> HIER: immer etwas zurückgeben
+    // immer etwas zurückgeben
     return { ok: true, message: `Rezept „${parsedRecipe.data.title}" wurde erfolgreich entgegengenommen.` };
 }
-//Rezept „{"title":"qwdqdwqwd","portions":2,"prepareTime":15,"cookingTime":30,"foodCategory":1,"recipeCategory":["qwdqwdqwd"],"ingredients":[{"recipeIngredientsId":14,"name":"Rice","quantity":12,"unitId":1},{"recipeIngredientsId":13,"name":"Salmon","quantity":1212,"unitId":1}],"steps":[{"text":"asddasdASDASFASF"},{"text":"WFWAQFEWEAQFEAQF"}]} qwdqdwqwd 30 15 [object Object],[object Object] qwdqwdqwd [object Object],[object Object] 2" entgegengenommen.
-
-
-//„{"title":"Test","portions":2,"prepareTime":15,"cookingTime":30,"foodCategory":1,"recipeCategory":["pasta"],"ingredients":[{"name":"Bier","quantity":0,"unitId":2},{"name":"weizen","quantity":2,"unitId":3}],"steps":[{"text":"asd"}]} Test 30 15 [object Object],[object Object] pasta [object Object] 2" entgegengenommen.
-
-//Rezept „{"title":"kasdjl","portions":2,"prepareTime":15,"cookingTime":30,"difficulty":"easy","foodCategory":["slas"],"ingredients":[{"name":"asödlkqödwlk","quantity":"20"}],"steps":[{"text":"öalskdölaskdpaokdp"}]} kasdjl 30 easy 15 [object Object] slas [object Object] 2" entgegengenommen.
