@@ -7,25 +7,25 @@ import {recipe, recipeIngredients, recipeSteps, recipeCat, recipeAttributes} fro
 import {eq, inArray } from "drizzle-orm";
 
 const IngredientSchema = z.object({
-    recipeIngredientsId: z.coerce.number().min(1, "Mindestens eine Zutat muss hinzugefügt werden."),
+    recipeIngredientsId: z.coerce.number().min(1, "At least one ingredient must be added."),
     name: z.string().min(1),
-    quantity: z.coerce.number().min(1, "Mindestens die Menge 1 muss hinzugefügt werden."),
-    unitId: z.coerce.number().int().min(1, "Maßeinheit muss ausgewählt werden."),
+    quantity: z.coerce.number().min(1, "Quantity must be at least 1."),
+    unitId: z.coerce.number().int().min(1, "A unit of measurement must be selected."),
 });
 
 const StepSchema = z.object({
-    text: z.string().min(1, "Ein Arbeitsschritt muss mindestens einen Buchstaben enthalten."),
+    text: z.string().min(1, "A step must contain at least one character."),
 });
 
 const RecipeSchema = z.object({
-    title: z.string().min(1, "Titel ist ein Pflichtfeld."),
-    portions: z.coerce.number().int().min(1).max(64, "Bitte Feld Portionen ausfüllen."),
-    prepareTime: z.coerce.number().int().min(0).max(24 * 60, "Mindestens 1 Minute. Maximal 24H Vorbereitungszeit."),
-    cookingTime: z.coerce.number().int().min(0).max(24 * 60, "Mindestens 1 Minute. Maximal 24H Kochzeit."),
+    title: z.string().min(1, "Title is a required field."),
+    portions: z.coerce.number().int().min(1).max(64, "Please fill out the portions field."),
+    prepareTime: z.coerce.number().int().min(0).max(24 * 60, "Minimum 1 minute. Maximum 24 hours preparation time."),
+    cookingTime: z.coerce.number().int().min(0).max(24 * 60, "Minimum 1 minute. Maximum 24 hours cooking time."),
     foodCategory: z.coerce.number().int().min(1),
     recipeCategory: z.array(z.string().min(1)).max(20).default([]),
-    ingredients: z.array(IngredientSchema).min(1, "Mindestens eine Zutat muss hinzugefügt werden."),
-    steps: z.array(StepSchema).min(1, "Mindestens ein Arbeitsschritt muss hinzugefügt werden."),
+    ingredients: z.array(IngredientSchema).min(1, "At least one ingredient must be added."),
+    steps: z.array(StepSchema).min(1, "At least one step must be added."),
 });
 
 const errorMsg = "Something went wrong";
@@ -40,7 +40,7 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
 
     //Error Handling
     if (typeof raw !== "string") {
-        return {ok: false, error: errorMsg};  /// "Payload missing"};
+        return {ok: false, error: "There ar no Inputs"};  /// "Payload missing"};
     }
     //Parse Payload
     let parsedRecipe: ReturnType<typeof RecipeSchema.safeParse>;
@@ -116,9 +116,9 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
             // Schritte als Map komplett in DB schreiben
             await transfer.insert(recipeSteps).values(
                 steps.map((s, idx) => ({
-                    recipeId,              // FK from Recipe number
-                    stepNumber: idx + 1,   // Step Number
-                    step: s.text.trim(),   // Step Text
+                    recipeId,
+                    stepNumber: idx + 1,
+                    step: s.text.trim(),
                 })),
             );
 
@@ -126,10 +126,10 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
 
         });
     } catch {
-        return {ok: false, error: errorMsg};
+        return {ok: false, error: "Something went wrong"}; // DB issue occured -> error message should not reachable for client
     }
 
 
     // immer etwas zurückgeben
-    return { ok: true, message: `Rezept „${parsedRecipe.data.title}" wurde erfolgreich entgegengenommen.` };
+    return { ok: true, message: `Recipe “${parsedRecipe.data.title}” successfully created.`};
 }
