@@ -29,7 +29,7 @@ type Props = {
         message?: string;
         error?: string;
     }>;
-    onCreated: (row: IngredientRow) => void;
+    onCreated: (row: Omit<IngredientRow, "category">) => void;
 };
 
 export default function IngredientCreateDialog({ units, action, onCreated }: Props) {

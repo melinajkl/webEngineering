@@ -54,7 +54,7 @@ export default function RecipeFormDialogButton(props: Props) {
                         unitsPromise={unitsPromise}
                         foodCategoryPromise={foodCategoryPromise}
                         ingredientsPromise={ingredientsPromise}
-                        ingredientCategoriesPromise={ingredientCategoriesPromise}
+                        //ingredientCategoriesPromise={ingredientCategoriesPromise}
                         createIngredientAction={createIngredientAction}
                     />
                 </div>

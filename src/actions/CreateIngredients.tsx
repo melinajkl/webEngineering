@@ -1,4 +1,4 @@
-"use server";
+/*"use server";
 
 import "server-only";
 import { z } from "zod";
@@ -8,7 +8,7 @@ import { db } from "@/db";
 import { ingredients } from "@/db/schema";
 
 
-
+//Inputvalidierung
 const CreateIngredientSchema = z.object({
     name: z.string().trim().min(1, "Name is required"),
     unitId: z.coerce.number().int().positive().min(1, "A unit of measurement must be selected."),
@@ -51,6 +51,7 @@ export async function createIngredientAction(formData: FormData): Promise<Create
         .values({
             name: normalizedName,
             unit: parsed.data.unitId,
+
         })
         .returning({
             id: ingredients.id,
@@ -63,3 +64,4 @@ export async function createIngredientAction(formData: FormData): Promise<Create
 
     return { ok: true, id: row.id, name: row.name, unitId: row.unitId , message: "Ingredient added successfully." };
 }
+*/ //Kann gelöscht werden.

@@ -124,7 +124,7 @@ export function CalendarPage() {
                                         key={i}
                                         className={cn(
                                             "text-xs rounded px-1 truncate",
-                                            ev.color
+                                            ev.color,
                                         )}
                                     >
                                         {ev.title}

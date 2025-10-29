@@ -41,12 +41,14 @@ type Props = {
 type Ingredient = NonNullable<CreateRecipeInput["ingredients"]>[number];
 type Step = NonNullable<CreateRecipeInput["steps"]>[number];
 
+
 export default function RecipeForm({
                                        action,
                                        unitsPromise,
                                        foodCategoryPromise,
                                        ingredientsPromise,
                                        createIngredientAction,
+
                                    }: Props) {
 
     // Initialwerte aus den Promise

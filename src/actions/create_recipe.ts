@@ -45,7 +45,7 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
     try {
         parsedRecipe = RecipeSchema.safeParse(JSON.parse(raw));
     } catch {
-        return {ok: false, error: errorMsg }; //"Payload is not valid JSON"};
+        return {ok: false, error: "There ar no Inputs" }; //"Payload is not valid JSON"};
     }
     if (!parsedRecipe.success) {
         const msg = parsedRecipe.error.issues

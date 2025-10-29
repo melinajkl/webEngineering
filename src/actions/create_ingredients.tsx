@@ -23,10 +23,13 @@ export type CreateIngredientResult =
     ok: true;
     id: number;
     name: string;
-    unitId: number | null;
+    unitId?: number;
     categoryId: number;
     message: string;
-} | {  error: string };
+} |  {
+    ok: false;
+    error: string;
+};
 
 function normalizeLabel(s: string): string {
     return s.trim().replace(/\s+/g, " ");
@@ -45,7 +48,7 @@ export async function createIngredientAction(formData: FormData): Promise<Create
     if (!parse.success) {
         const msg = parse.error.issues
             .map((issue) => `${issue.message}`).join("\n");
-        return { error: msg };
+        return { ok: false, error: msg };
     }
 
     const name = normalizeLabel(parse.data.name);
@@ -87,7 +90,6 @@ export async function createIngredientAction(formData: FormData): Promise<Create
             }
 
             // 2) Zutat anlegen (wenn gleichnamig schon vorhanden, einfach zurückgeben)
-            //   Hinweis: Falls du UNIQUE(name) hast, nutze onConflictDoNothing + Re-Select
             const insertedIng = await tx
                 .insert(ingredients)
                 .values({ name, category: categoryId, unit: unitId })

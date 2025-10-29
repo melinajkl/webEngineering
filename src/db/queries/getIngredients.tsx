@@ -1,3 +1,4 @@
+"use server";
 
 import "server-only";
 import { asc } from "drizzle-orm";
@@ -7,7 +8,8 @@ import { ingredients } from "@/db/schema";
 export type IngredientRow = {
     id: number;
     name: string;
-    unitId: number;
+    category: number;
+    unitId: number | undefined;
 };
 
 export async function getIngredients(): Promise<IngredientRow[]> {
