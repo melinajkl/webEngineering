@@ -45,7 +45,7 @@ export default function RecipeFormDialogButton(props: Props) {
 
             <DialogContent className="sm:max-w-3xl w-full max-h-[calc(100vh-2rem)] ">
                 <DialogHeader className="invisible">
-                    <DialogTitle>Neues Rezept</DialogTitle>
+                    <DialogTitle>New Recipe</DialogTitle>
                 </DialogHeader>
 
                 <div className="mt-2 w-full max-h-[calc(100vh-8rem)] overflow-auto max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl">

@@ -10,8 +10,8 @@ import { ingredients } from "@/db/schema";
 
 
 const CreateIngredientSchema = z.object({
-    name: z.string().trim().min(1, "Name erforderlich"),
-    unitId: z.coerce.number().int().positive().min(1, "Maßeinheit muss Ausgewählt werden."),
+    name: z.string().trim().min(1, "Name is required"),
+    unitId: z.coerce.number().int().positive().min(1, "A unit of measurement must be selected."),
 });
 
 export type CreateIngredientResult =
@@ -24,14 +24,14 @@ export async function createIngredientAction(formData: FormData): Promise<Create
 
     const parsed = CreateIngredientSchema.safeParse({ name, unitId });
     if (!parsed.success) {
-        return { ok: false, error: parsed.error.issues[0]?.message ?? "Ungültige Eingabe" };
+        return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
     }
 
     const normalizedName = parsed.data.name;
 
     // Check for existing by name (avoid relying on UNIQUE constraint presence)
     const existing = await db
-        .select({ id: ingredients.id, unitId: ingredients.unit }) // adjust if schema uses ingredients.unitId
+        .select({ id: ingredients.id, unitId: ingredients.unit })
         .from(ingredients)
         .where(eq(ingredients.name, normalizedName))
         .limit(1);
@@ -42,7 +42,7 @@ export async function createIngredientAction(formData: FormData): Promise<Create
             id: existing[0].id,
             name: normalizedName,
             unitId: existing[0].unitId,
-            message: "Zutat existiert bereits",
+            message: "Ingredient already exists.",
         };
     }
 
@@ -61,5 +61,5 @@ export async function createIngredientAction(formData: FormData): Promise<Create
     // Keep UI fresh
     revalidatePath("/", "layout");
 
-    return { ok: true, id: row.id, name: row.name, unitId: row.unitId , message: "Zutat angelegt" };
+    return { ok: true, id: row.id, name: row.name, unitId: row.unitId , message: "Ingredient added successfully." };
 }

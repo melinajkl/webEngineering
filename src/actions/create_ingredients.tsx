@@ -13,9 +13,9 @@ import { sql } from "drizzle-orm";
  * - andernfalls wird sie angelegt
  */
 const CreateIngredientSchema = z.object({
-    name: z.string().trim().min(1, "Name erforderlich"),
-    categoryName: z.string().trim().min(1, "Kategorie erforderlich"),
-    unitId: z.coerce.number().int().positive().min(1, "Eine Maßeinheit muss Ausgewählt werden."),
+    name: z.string().trim().min(1, "Name is required"),
+    categoryName: z.string().trim().min(1, "Category is required"),
+    unitId: z.coerce.number().int().positive().min(1, "A unit of measurement must be selected."),
 });
 
 export type CreateIngredientResult =
@@ -80,7 +80,7 @@ export async function createIngredientAction(formData: FormData): Promise<Create
                         .where(sql`lower(${ingredientCat.name}) = ${lower}`)
                         .limit(1);
                     if (fallback.length === 0) {
-                        throw new Error("Kategorie konnte nicht angelegt werden");
+                        throw new Error("Failed to create category.");
                     }
                     categoryId = fallback[0]!.id;
                 }
@@ -103,7 +103,7 @@ export async function createIngredientAction(formData: FormData): Promise<Create
                         .limit(1)
                 )[0]?.id;
 
-            if (!id) throw new Error("Zutat konnte nicht angelegt werden");
+            if (!id) throw new Error("Failed to create ingredient.");
 
             return {
                 id,
@@ -121,7 +121,7 @@ export async function createIngredientAction(formData: FormData): Promise<Create
             name,
             unitId: result.unitId ?? null,
             categoryId: result.categoryId,
-            message: "Zutat angelegt",
+            message: "Ingredient added successfully",
         };
     } catch (e) {
         console.error(e);
