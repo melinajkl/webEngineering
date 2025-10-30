@@ -6,6 +6,8 @@ import { db } from "@/db";
 import {recipe, recipeIngredients, recipeSteps, recipeCat, recipeAttributes} from "@/db/schema";
 import {eq, inArray } from "drizzle-orm";
 
+import {insertRecipe} from "@/db/queries/insertRecipe";
+
 const IngredientSchema = z.object({
     recipeIngredientsId: z.coerce.number().min(1, "At least one ingredient must be added."),
     name: z.string().min(1),
@@ -27,6 +29,12 @@ const RecipeSchema = z.object({
     ingredients: z.array(IngredientSchema).min(1, "At least one ingredient must be added."),
     steps: z.array(StepSchema).min(1, "At least one step must be added."),
 });
+
+interface iIngredient {
+    recipeIngredientsId: number,
+    quantity: number,
+    unitId: number,
+}
 
 export type CreateRecipeInput = z.infer<typeof RecipeSchema>;
 export type CreateRecipeResult =
@@ -58,20 +66,19 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
     try {
         await db.transaction(async (transfer) => {
 
-
-            //Rezept in die Datenbank eintragen.
+            /*//Rezept in die Datenbank eintragen.
             const [rowRecipe] = await transfer.insert(recipe).values({
                 title: parsedRecipe.data.title,
                 foodCategory: parsedRecipe.data.foodCategory,
                 prepareTime: parsedRecipe.data.prepareTime,
                 cookingTime: parsedRecipe.data.cookingTime,
                 portions: parsedRecipe.data.portions
-            }).returning({id: recipe.id});
+            }).returning({id: recipe.id});*/
 
-            const recipeId = rowRecipe.id
+            const recipeId = await insertRecipe(parsedRecipe.data)
 
             //Zutaten in die Datenbank eintragen.
-            const { ingredients } = JSON.parse(raw) as { ingredients: { recipeIngredientsId: number, quantity: number, unitId: number }[] };
+            const { ingredients } = JSON.parse(raw) as { ingredients: iIngredient [] };
             await transfer
                 .insert(recipeIngredients)
                 .values(
