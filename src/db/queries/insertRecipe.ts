@@ -4,8 +4,12 @@ import { db } from "@/db";
 import {CreateRecipeInput} from "@/actions/create_recipe";
 import {recipe} from "@/db/schema";
 
-interface iDbRecipe {
-
+export interface iDbRecipe {
+    title: string,
+    foodCategory:number,
+    prepareTime: number,
+    cookingTime: number,
+    portions:number
 }
 
 export async function insertRecipe(data: CreateRecipeInput) : Promise<number> {
@@ -13,7 +17,7 @@ export async function insertRecipe(data: CreateRecipeInput) : Promise<number> {
         .insert(recipe)
         .values({
             title: data.title,
-            foodCategory: data.foodCategory,
+            foodCategory:   data.foodCategory,
             prepareTime: data.prepareTime,
             cookingTime: data.cookingTime,
             portions: data.portions,

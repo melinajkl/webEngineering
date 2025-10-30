@@ -6,7 +6,8 @@ import { db } from "@/db";
 import {recipe, recipeIngredients, recipeSteps, recipeCat, recipeAttributes} from "@/db/schema";
 import {eq, inArray } from "drizzle-orm";
 
-import {insertRecipe} from "@/db/queries/insertRecipe";
+
+import { insertRecipe} from "@/db/queries/insertRecipe";
 
 const IngredientSchema = z.object({
     recipeIngredientsId: z.coerce.number().min(1, "At least one ingredient must be added."),
@@ -128,8 +129,8 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
 
 
         });
-    } catch {
-        return {ok: false, error: "Something went wrong"}; // DB issue occured -> error message should not reachable for client
+    } catch (error) {
+        return {ok: false, error: String(error)};// "Something went wrong"}; // DB issue occured -> error message should not reachable for client
     }
 
 
