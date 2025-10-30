@@ -69,6 +69,7 @@ export async function createIngredientAction(formData: FormData): Promise<Create
             if (existingCat.length > 0) {
                 categoryId = existingCat[0]!.id;
             } else {
+
                 // anlegen; falls es parallel angelegt wird, danach erneut lesen
                 const inserted = await tx
                     .insert(ingredientCat)

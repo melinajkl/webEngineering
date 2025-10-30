@@ -180,9 +180,9 @@ export const shoppingList = sqliteTable("SHOPPING_LIST", {
 export const calendar = sqliteTable(
   "CALENDAR",
   {
-    date: real("date"),
-    daytime: real("daytime").references(() => foodCat.id), // based on diagram
-    recipe_id: integer("recipe").references(() => recipe.id),
+    date: real("date").notNull(),
+    daytime: real("daytime").references(() => foodCat.id).notNull(), // based on diagram
+    recipe_id: integer("recipe").references(() => recipe.id).notNull(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.date, table.daytime] }),

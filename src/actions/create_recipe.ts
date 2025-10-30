@@ -82,7 +82,6 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
                     }))
                 );
 
-
             // Rezeptcategory in die Datenbank eintragen
             await transfer.insert(recipeCat).values(
                 parsedRecipe.data.recipeCategory.map((recipeCatName) => ({
@@ -106,7 +105,6 @@ export async function createRecipeAction(formData: FormData): Promise<CreateReci
                         }))
                     ).onConflictDoNothing();
             }
-
             const {steps} = JSON.parse(raw) as { steps: { text: string }[] };
             // vorhandene Schritte des Rezepts ersetzen
             await transfer.delete(recipeSteps).where(eq(recipeSteps.recipeId, recipeId));

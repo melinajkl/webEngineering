@@ -1,4 +1,3 @@
-// app/actions/getRecipeIngredients.ts
 "use server";
 
 import { getRecipeIngredientsById } from "@/db/queries/getRecipeIngredients";

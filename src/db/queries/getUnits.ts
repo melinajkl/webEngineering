@@ -10,7 +10,7 @@ export type UnitRow = {
 };
 
 export async function getUnits(): Promise<UnitRow[]> {
-    const rows = await db
+    return db
         .select({
             id: unit.id,
             name: unit.name,
@@ -18,5 +18,4 @@ export async function getUnits(): Promise<UnitRow[]> {
         })
         .from(unit)
         .orderBy(asc(unit.name));
-    return rows;
 }

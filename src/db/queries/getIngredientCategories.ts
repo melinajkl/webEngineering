@@ -7,9 +7,8 @@ import { ingredientCat } from "@/db/schema";
 export type IngredientCategoryRow = { id: number; name: string };
 
 export async function getIngredientCategories(): Promise<IngredientCategoryRow[]> {
-    const rows = await db
+    return  db
         .select({ id: ingredientCat.id, name: ingredientCat.name })
         .from(ingredientCat)
         .orderBy(asc(ingredientCat.name));
-    return rows;
 }

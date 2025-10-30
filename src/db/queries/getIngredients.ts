@@ -13,7 +13,7 @@ export type IngredientRow = {
 };
 
 export async function getIngredients(): Promise<IngredientRow[]> {
-    const rows = await db
+    return db
         .select({
             id: ingredients.id,
             name: ingredients.name,
@@ -22,5 +22,4 @@ export async function getIngredients(): Promise<IngredientRow[]> {
         })
         .from(ingredients)
         .orderBy(asc(ingredients.name));
-    return rows;
 }
