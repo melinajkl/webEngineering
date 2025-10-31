@@ -305,8 +305,13 @@ export default function RecipeForm({
                                 <Input
                                     className="md:col-span-2"
                                     placeholder="Quantity"
-                                    value={ing.quantity ?? ""}
-                                    onChange={(e) => updateIngredient(i, {quantity: Number(e.target.value)})}
+                                    inputMode="numeric"
+                                    value={ing.quantity ?? 0}
+                                    onChange={(e) =>{
+                                        const v = e.currentTarget.value;
+                                        if (!/^\d*$/.test(v)) return;
+                                        updateIngredient(i, {quantity: Number(e.target.value)})}
+                                    }
                                 />
 
                                 {/* Unit dropdown */}
