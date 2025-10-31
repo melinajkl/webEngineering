@@ -308,9 +308,9 @@ export default function RecipeForm({
                                     inputMode="numeric"
                                     value={ing.quantity ?? ""}
                                     onChange={(e) => {
-                                            const v = e.currentTarget.value;
-                                            if (!/^\d*$/.test(v)) return;
-                                            updateIngredient(i, { quantity: v === "" ? undefined : Number(v) });
+                                        const v = e.currentTarget.value;
+                                        if (!/^\d*$/.test(v)) return;
+                                        updateIngredient(i, { quantity: v === "" ? undefined : Number(v) });
                                     }}
                                 />
 
