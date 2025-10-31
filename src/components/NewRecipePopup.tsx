@@ -307,13 +307,11 @@ export default function RecipeForm({
                                     placeholder="Quantity"
                                     inputMode="numeric"
                                     value={ing.quantity ?? ""}
-                                    onChange={(e) =>
-                                        {
+                                    onChange={(e) => {
                                             const v = e.currentTarget.value;
                                             if (!/^\d*$/.test(v)) return;
-                                            updateIngredient(i, { quantity: v === "" ? undefined : Number(v) })
-                                        }
-                                    }
+                                            updateIngredient(i, { quantity: v === "" ? undefined : Number(v) });
+                                    }}
                                 />
 
                                 {/* Unit dropdown */}
