@@ -304,7 +304,7 @@ export default function RecipeForm({
                                 {/* Quantity */}
                                 <Input
                                     className="md:col-span-2"
-                                    placeholder="Quantity"
+                                    placeholder="0"
                                     inputMode="numeric"
                                     value={ing.quantity ?? ""}
                                     onChange={(e) => {
