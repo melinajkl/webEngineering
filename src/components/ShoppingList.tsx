@@ -1,16 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import { ShoppingItem } from "./ShoppingItem";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { shoppingListRow } from "@/db/queries/getShoppingList";
-import { getShoppingList } from "@/db/queries/getShoppingList";
-import { 
-  toggleShoppingListItem, 
-  deleteShoppingListItem 
+import {
+  toggleShoppingListItem,
+  deleteShoppingListItem,
 } from "@/actions/shoppingListActions";
-import { useRouter } from "next/navigation";
 
 type Filter = "all" | "active" | "done";
 
@@ -51,9 +49,20 @@ export function ShoppingList({ initialItems }: ShoppingListProps) {
     return true;
   });
 
-  const now = new Date();
-  const in7Days = new Date();
-  in7Days.setDate(now.getDate() + 7);
+  // Gruppieren nach Kategorie
+  const groupedByCategory = filteredItems.reduce((groups, item) => {
+    const category = item.category ?? "Andere";
+    if (!groups[category]) groups[category] = [];
+    groups[category].push(item);
+    return groups;
+  }, {} as Record<string, shoppingListRow[]>);
+
+  // Hilfsfunktion für "isUpcoming"
+  const isUpcoming = (dateOfUse: number | null | undefined) => {
+    if (!dateOfUse) return false;
+    const today = new Date().getTime();
+    return dateOfUse > today;
+  };
 
   return (
     <Card className="w-full max-w-lg mx-auto mt-8 p-4 space-y-4">
@@ -81,42 +90,37 @@ export function ShoppingList({ initialItems }: ShoppingListProps) {
         </Button>
       </div>
 
-      {/* Item-Liste */}
-      <CardContent className="flex flex-col gap-2">
-        {filteredItems.length === 0 ? (
-          <p className="text-center text-muted-foreground">No items yet.</p>
-        ) : (
-          filteredItems.map((item) => {
-            // ✅ Prüfen, ob der Artikel in den nächsten 7 Tagen verwendet wird
-            const isUpcoming =
-              item.dateOfUse >= now.getTime() &&
-              item.dateOfUse <= in7Days.getTime();
+      {/* Einkaufsliste nach Kategorien */}
+      <CardContent className="flex flex-col gap-4">
+        {Object.entries(groupedByCategory).map(([category, categoryItems]) => (
+          <div key={category}>
+            <h3 className="text-lg font-semibold mt-4 mb-2 border-b pb-1">
+              🗂️ {category}
+            </h3>
+            {categoryItems.map((item) => {
+              const itemName = `${item.ingredientName ?? `Ingredient ${item.ingredientId}`} (${item.amount} ${item.unitName ?? ""})`;
+              const upcoming = isUpcoming(item.dateOfUse);
+              
+              return (
+                <div key={item.id} className={upcoming ? "text-green-600 font-medium" : ""}>
+                  <ShoppingItem
+                    item={{
+                      id: item.id.toString(),
+                      name: itemName,
+                      done: item.checked,
+                    }}
+                    onToggle={() => handleToggle(item.id)}
+                    onDelete={() => handleDelete(item.id)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ))}
 
-            return (
-              <ShoppingItem
-                key={item.id}
-                item={{
-                  id: item.id.toString(),
-                  name: (
-                    <span
-                      className={
-                        isUpcoming ? "text-green-600 font-medium" : ""
-                      }
-                    >
-                      {item.ingredientName
-                        ? `${item.ingredientName} (${item.amount} ${
-                            item.unitName ?? ""
-                          })`
-                        : `Ingredient ${item.ingredientId}`}
-                    </span>
-                  ) as unknown as string, // 👈 Typkonvertierung nötig, da ShoppingItem `string` erwartet
-                  done: item.checked,
-                }}
-                onToggle={() => handleToggle(item.id)}
-                onDelete={() => handleDelete(item.id)}
-              />
-            );
-          })
+        {/* Falls keine Items vorhanden */}
+        {filteredItems.length === 0 && (
+          <p className="text-center text-muted-foreground">No items yet.</p>
         )}
       </CardContent>
     </Card>
