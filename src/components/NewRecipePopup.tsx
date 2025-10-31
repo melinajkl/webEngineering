@@ -310,8 +310,8 @@ export default function RecipeForm({
                                     onChange={(e) => {
                                             const v = e.currentTarget.value;
                                             if (!/^\d*$/.test(v)) return;
-                                            updateIngredient(i, { quantity: v === "" ? undefined : Number(v) });
-                                    }}
+                                            updateIngredient(i, { quantity: v === "" ? undefined : Number(v) })}
+                                    }
                                 />
 
                                 {/* Unit dropdown */}
