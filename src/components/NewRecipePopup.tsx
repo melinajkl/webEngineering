@@ -306,7 +306,7 @@ export default function RecipeForm({
                                     className="md:col-span-2"
                                     placeholder="Quantity"
                                     inputMode="numeric"
-                                    value={ing.quantity ?? 0}
+                                    value={ing.quantity ?? ""}
                                     onChange={(e) =>
                                         {
                                             const v = e.currentTarget.value;
