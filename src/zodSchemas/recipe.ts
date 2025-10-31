@@ -15,6 +15,8 @@ export const RecipeSchema = z.object({
     steps: z.array(StepSchema).min(1, "At least one step must be added."),
 });
 
+export type iRecipeSchema = z.infer<typeof RecipeSchema>;
+
 export const CreateRecipeRowSchema = RecipeSchema.pick({
     title: true,
     foodCategory: true,
@@ -24,3 +26,20 @@ export const CreateRecipeRowSchema = RecipeSchema.pick({
 });
 
 export type iDbRecipe = z.infer<typeof CreateRecipeRowSchema>;
+
+
+export const CreateRecipeIngredienceSchema = RecipeSchema.pick(
+    {
+        ingredients: true,
+    }
+);
+export type createRecipeIngredienceSchema = z.infer<typeof CreateRecipeIngredienceSchema>;
+
+export const CreateRecipeStepSchema = RecipeSchema.pick(
+    {
+        steps: true,
+    }
+);
+export type createRecipeStepSchema = z.infer<typeof CreateRecipeStepSchema>;
+
+

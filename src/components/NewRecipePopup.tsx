@@ -2,9 +2,8 @@
 
 import {use, useState, useTransition} from "react";
 
-// Import DB Querries
-import type {CreateRecipeInput} from "@/actions/create_recipe";
 import type {CreateIngredientResult} from "@/actions/create_ingredients";
+import type {iRecipeSchema, createRecipeIngredienceSchema, createRecipeStepSchema } from "@/zodSchemas/recipe";
 
 // import actions
 import type {UnitRow} from "@/db/queries/getUnits";
@@ -38,8 +37,8 @@ type Props = {
 };
 
 // Zutaten und Steps aus zod RecipeMaske in Array
-type Ingredient = NonNullable<CreateRecipeInput["ingredients"]>[number];
-type Step = NonNullable<CreateRecipeInput["steps"]>[number];
+type Ingredient = NonNullable<createRecipeIngredienceSchema["ingredients"]>[number];
+type Step = NonNullable<createRecipeStepSchema["steps"]>[number];
 
 
 export default function RecipeForm({
@@ -48,7 +47,6 @@ export default function RecipeForm({
                                        foodCategoryPromise,
                                        ingredientsPromise,
                                        createIngredientAction,
-
                                    }: Props) {
 
     // Initialwerte aus den Promise
@@ -131,7 +129,7 @@ export default function RecipeForm({
         <form
             className="grid gap-6 "
             action={(fd) => {
-                const payload: CreateRecipeInput = {
+                const payload: iRecipeSchema = {
                     title,
                     portions,
                     prepareTime,
