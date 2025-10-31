@@ -304,13 +304,13 @@ export default function RecipeForm({
                                 {/* Quantity */}
                                 <Input
                                     className="md:col-span-2"
-                                    placeholder="0"
+                                    placeholder="Quantity"
                                     inputMode="numeric"
                                     value={ing.quantity ?? ""}
                                     onChange={(e) => {
-                                        const v = e.currentTarget.value;
-                                        if (!/^\d*$/.test(v)) return;
-                                        updateIngredient(i, { quantity: v === "" ? undefined : Number(v) });
+                                        const inputChar = e.currentTarget.value;
+                                        if (!/^\d*$/.test(inputChar)) return;
+                                        updateIngredient(i, { quantity: inputChar === "" ? undefined : Number(inputChar) });
                                     }}
                                 />
 
