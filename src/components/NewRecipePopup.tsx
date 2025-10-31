@@ -22,6 +22,7 @@ import {Loader2, Plus, Trash2} from "lucide-react";
 
 // Import Dialog zum "Neue Zutat" anlegen
 import IngredientCreateDialog from "@/components/ingredient_create_dialog";
+import {iIngredientRecipe} from "@/db/queries/getIngredients";
 
 type Props = {
     //Server Action zum Speichern des Formulars
@@ -72,7 +73,7 @@ export default function RecipeForm({
     const [steps, setSteps] = useState<Step[]>([{text: ""}]);
 
     // Lokale liste der Initialingredients für aktualisierung der UI nach neuanlage
-    const [ingredientOptions, setIngredientOptions] = useState<IngredientRow[]>(initialIngredientOptions);
+    const [ingredientOptions, setIngredientOptions] = useState<iIngredientRecipe[]>(initialIngredientOptions);
 
     const [message, setMessage] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
@@ -250,7 +251,7 @@ export default function RecipeForm({
                                 id="food_category"
                                 value={recipeCategory}
                                 onChange={(e) => setRecipeCategory(e.target.value)}
-                                placeholder="e.g. pasta, italien"
+                                placeholder="e.g. pasta, itnein vor dem mergealien"
                             />
                         </div>
                     </div>

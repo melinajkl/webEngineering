@@ -12,6 +12,12 @@ export type IngredientRow = {
     unitId: number | undefined;
 };
 
+export type iIngredientRecipe = {
+    id: number;
+    name: string;
+    unitId: number | undefined;
+};
+
 export async function getIngredients(): Promise<IngredientRow[]> {
     return db
         .select({
