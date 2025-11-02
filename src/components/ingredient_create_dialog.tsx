@@ -29,7 +29,7 @@ type Props = {
         message?: string;
         error?: string;
     }>;
-    onCreated: (row: IngredientRow) => void;
+    onCreated: (row: Omit<IngredientRow, "category">) => void;
 };
 
 export default function IngredientCreateDialog({ units, action, onCreated }: Props) {
@@ -57,7 +57,7 @@ export default function IngredientCreateDialog({ units, action, onCreated }: Pro
         setPending(false);
 
         if (!res.ok || !res.id) {
-            setError(res.error ?? "Anlegen fehlgeschlagen");
+            setError(res.error ?? "Failed to create");
             return;
         }
 
@@ -79,13 +79,13 @@ export default function IngredientCreateDialog({ units, action, onCreated }: Pro
             <DialogTrigger asChild>
                 <Button variant="outline">
                     <Plus className="mr-2 size-4" />
-                    Neue Zutat
+                    New Ingredient
                 </Button>
             </DialogTrigger>
 
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>Zutat anlegen</DialogTitle>
+                    <DialogTitle>Add ingredient</DialogTitle>
                 </DialogHeader>
 
                 <div className="grid gap-3">
@@ -95,35 +95,35 @@ export default function IngredientCreateDialog({ units, action, onCreated }: Pro
                             id="ing_name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="z. B. Tomate"
+                            placeholder="e.g. Tomato"
                         />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="ing_category">Kategorie</Label>
+                        <Label htmlFor="ing_category">Category</Label>
                         <Input
                             id="ing_category"
                             value={categoryName}
                             onChange={(e) => setCategoryName(e.target.value)}
-                            placeholder="z. B. Gemüse"
+                            placeholder="e.g. Vegetable"
                         />
                         <p className="text-xs text-muted-foreground">
-                            Neue Kategorien werden automatisch angelegt.
+                            New categories are created automatically.
                         </p>
                     </div>
 
                     <div className="grid gap-2">
-                        <Label>Standard-Einheit (optional)</Label>
+                        <Label>Standard Unit (optional)</Label>
                         <Select
                             value={unitId != null ? String(unitId) : undefined}
                             onValueChange={(v) => setUnitId(v ? Number(v) : undefined)}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Einheit wählen" />
+                                <SelectValue placeholder="choose Unit" />
                             </SelectTrigger>
                             <SelectContent>
                                 {units.length === 0 ? (
-                                    <SelectItem disabled value="__no_units__">Keine Einheiten vorhanden</SelectItem>
+                                    <SelectItem disabled value="__no_units__">No units available</SelectItem>
                                 ) : (
                                     units.map((u) => (
                                         <SelectItem key={u.id} value={String(u.id)}>
@@ -140,11 +140,11 @@ export default function IngredientCreateDialog({ units, action, onCreated }: Pro
 
                 <DialogFooter className="mt-2">
                     <Button variant="outline" type="button" onClick={() => setOpen(false)}>
-                        Abbrechen
+                        Cancel
                     </Button>
                     <Button type="button" onClick={submit} disabled={!canSubmit}>
                         {pending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Plus className="mr-2 size-4" />}
-                        Anlegen
+                        Save
                     </Button>
                 </DialogFooter>
             </DialogContent>

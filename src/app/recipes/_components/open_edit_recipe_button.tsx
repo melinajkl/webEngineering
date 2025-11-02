@@ -7,7 +7,7 @@ import { getIngredientCategories } from "@/db/queries/getIngredientCategories";
 import { createRecipeAction } from "@/actions/create_recipe";
 import { createIngredientAction } from "@/actions/create_ingredients";
 
-export default function OpenCreateRecipeButton({ label }: { label: string }) {
+export default function OpenCreateRecipeButton({ label }: { label: string}) {
     const unitsPromise = getUnits();
     const foodCategoryPromise = getFoodCategory();
     const ingredientsPromise = getIngredients();

@@ -112,16 +112,6 @@ export const unit = sqliteTable("UNIT", {
   shortForm: text("short_form").notNull(),
 });
 
-/*INSERT OR IGNORE INTO "UNIT" ("name","short_form") VALUES
- ('Gramm','g'),
- ('Kilogramm','kg'),
- ('Milliliter','ml'),
- ('Liter','l'),
- ('Teelöffel','TL'),
- ('Esslöffel','EL'),
- ('Stück','stk');
-*/
-
 // --- MAIN TABLES ---
 
 export const recipe = sqliteTable("RECIPE", {
@@ -190,9 +180,9 @@ export const shoppingList = sqliteTable("SHOPPING_LIST", {
 export const calendar = sqliteTable(
   "CALENDAR",
   {
-    date: real("date"),
-    daytime: real("daytime").references(() => foodCat.id), // based on diagram
-    recipe_id: integer("recipe").references(() => recipe.id),
+    date: real("date").notNull(),
+    daytime: real("daytime").references(() => foodCat.id).notNull(), // based on diagram
+    recipe_id: integer("recipe").references(() => recipe.id).notNull(),
   },
   (table) => ({
     pk: primaryKey({ columns: [table.date, table.daytime] }),

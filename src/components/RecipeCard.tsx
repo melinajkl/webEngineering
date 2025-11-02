@@ -37,8 +37,6 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
   const [error, setError] = useState<string | null>(null);
 
   const handleClick = async () => {
-    setIsLoading(true);
-    setError(null);
 
     try {
       // Fetch both using actions in parallel

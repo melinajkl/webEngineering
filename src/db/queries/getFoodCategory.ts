@@ -9,12 +9,11 @@ export type FoodCategoryRow = {
 };
 
 export async function getFoodCategory(): Promise<FoodCategoryRow[]> {
-    const rows = await db
+    return db
         .select({
             id: foodCat.id,
             name: foodCat.name,
         })
         .from(foodCat)
         .orderBy(asc(foodCat.id));
-    return rows;
 }

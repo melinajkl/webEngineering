@@ -2,9 +2,8 @@
 
 import {use, useState, useTransition} from "react";
 
-// Import DB Querries
-import type {CreateRecipeInput} from "@/actions/create_recipe";
 import type {CreateIngredientResult} from "@/actions/create_ingredients";
+import type {iRecipeSchema, createRecipeIngredienceSchema, createRecipeStepSchema } from "@/zodSchemas/recipe";
 
 // import actions
 import type {UnitRow} from "@/db/queries/getUnits";
@@ -22,7 +21,8 @@ import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/c
 import {Loader2, Plus, Trash2} from "lucide-react";
 
 // Import Dialog zum "Neue Zutat" anlegen
-import IngredientCreateDialog from "@/app/recipes/_components/ingredient_create_dialog";
+import IngredientCreateDialog from "@/components/ingredient_create_dialog";
+import {iIngredientRecipe} from "@/db/queries/getIngredients";
 
 type Props = {
     //Server Action zum Speichern des Formulars
@@ -38,8 +38,9 @@ type Props = {
 };
 
 // Zutaten und Steps aus zod RecipeMaske in Array
-type Ingredient = NonNullable<CreateRecipeInput["ingredients"]>[number];
-type Step = NonNullable<CreateRecipeInput["steps"]>[number];
+type Ingredient = NonNullable<createRecipeIngredienceSchema["ingredients"]>[number];
+type Step = NonNullable<createRecipeStepSchema["steps"]>[number];
+
 
 export default function RecipeForm({
                                        action,
@@ -72,7 +73,7 @@ export default function RecipeForm({
     const [steps, setSteps] = useState<Step[]>([{text: ""}]);
 
     // Lokale liste der Initialingredients für aktualisierung der UI nach neuanlage
-    const [ingredientOptions, setIngredientOptions] = useState<IngredientRow[]>(initialIngredientOptions);
+    const [ingredientOptions, setIngredientOptions] = useState<iIngredientRecipe[]>(initialIngredientOptions);
 
     const [message, setMessage] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
@@ -130,7 +131,7 @@ export default function RecipeForm({
         <form
             className="grid gap-6 "
             action={(fd) => {
-                const payload: CreateRecipeInput = {
+                const payload: iRecipeSchema = {
                     title,
                     portions,
                     prepareTime,
@@ -148,7 +149,7 @@ export default function RecipeForm({
                 fd.set("payload", JSON.stringify(payload));
                 startTransition(async () => {
                     const res = await action(fd);
-                    setMessage(res.ok ? res.message ?? "Gespeichert." : `Fehler: ${res.error ?? "unbekannt"}`);
+                    setMessage(res.ok ? res.message ?? "Saved." : `${res.error ?? "unknown"}`);
                     if (res.ok) {
                         // reset
                         setTitle("");
@@ -166,24 +167,24 @@ export default function RecipeForm({
             <Card
                 className="rounded-2xl shadow-sm max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl">
                 <CardHeader>
-                    <CardTitle className="text-xl">Rezept</CardTitle>
+                    <CardTitle className="text-xl">New Recipe</CardTitle>
                 </CardHeader>
                 <CardContent className="grid gap-6">
                     {/* Titel */}
                     <div className="grid gap-2">
-                        <Label htmlFor="title">Titel</Label>
+                        <Label htmlFor="title">Title</Label>
                         <Input
                             id="title"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="z. B. Spaghetti Carbonara"
+                            placeholder="e.g. Spaghetti Carbonara"
                         />
                     </div>
 
                     {/* Portionen / Zeiten */}
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div className="grid gap-2">
-                            <Label htmlFor="portions">Portionen</Label>
+                            <Label htmlFor="portions">Portions</Label>
                             <Input
                                 id="portions"
                                 type="number"
@@ -197,7 +198,7 @@ export default function RecipeForm({
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="prep">Vorbereitung (Min.)</Label>
+                            <Label htmlFor="prep">Prep time (min)</Label>
                             <Input
                                 id="prep"
                                 type="number"
@@ -210,7 +211,7 @@ export default function RecipeForm({
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="cook">Kochen/Backen (Min.)</Label>
+                            <Label htmlFor="cook">Cook/Bake time (min)</Label>
                             <Input
                                 id="cook"
                                 type="number"
@@ -227,13 +228,13 @@ export default function RecipeForm({
                     {/* Kategorie + Tags */}
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                         <div className="grid gap-2">
-                            <Label>Essenskategorie</Label>
+                            <Label>Meal category</Label>
                             <Select
                                 value={String(foodCategoryId)}
                                 onValueChange={(v) => setFoodCategoryId(v ? Number(v) : 1)}
                             >
                                 <SelectTrigger>
-                                    <SelectValue placeholder="wählen"/>
+                                    <SelectValue placeholder="choose"/>
                                 </SelectTrigger>
                                 <SelectContent>
                                     {initialFoodCats.map((c) => (
@@ -246,12 +247,12 @@ export default function RecipeForm({
                         </div>
 
                         <div className="col-span-2 grid gap-2">
-                            <Label htmlFor="food_category">Tags (Komma-getrennt)</Label>
+                            <Label htmlFor="food_category">Tags (separated by commas)</Label>
                             <Input
                                 id="food_category"
                                 value={recipeCategory}
                                 onChange={(e) => setRecipeCategory(e.target.value)}
-                                placeholder="z. B. pasta, italienisch"
+                                placeholder="e.g. pasta, itnein vor dem mergealien"
                             />
                         </div>
                     </div>
@@ -259,9 +260,9 @@ export default function RecipeForm({
                     {/* Zutaten */}
                     <div className="grid gap-3">
                         <div className="flex items-center justify-between">
-                            <Label>Zutaten</Label>
+                            <Label>Ingredients</Label>
                             <div className="flex items-center gap-2 ">
-                                {/* Neue Zutat (opens popup) — with free-text category upsert */}
+                                { /* New Ingredien */ }
                                 <IngredientCreateDialog
                                     units={initialUnits}
                                     action={createIngredientAction}
@@ -274,7 +275,7 @@ export default function RecipeForm({
                                 />
                                 {/* + Zutat hinzufügen (adds a row) */}
                                 <Button type="button" variant="secondary" onClick={addIngredient}>
-                                    <Plus className="mr-2 size-4"/> Zutat hinzufügen
+                                    <Plus className="mr-2 size-4"/> Add ingredient
                                 </Button>
                             </div>
                         </div>
@@ -288,7 +289,7 @@ export default function RecipeForm({
                                         onValueChange={(idStr) => onSelectIngredient(i, idStr)}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Zutat wählen"/>
+                                            <SelectValue placeholder="choose ingredients"/>
                                         </SelectTrigger>
                                         <SelectContent position="popper" className="max-h-64">
                                             {ingredientOptions.map((opt) => (
@@ -322,7 +323,7 @@ export default function RecipeForm({
                                         onValueChange={(v) => updateIngredient(i, {unitId: v ? Number(v) : undefined})}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Einheit"/>
+                                            <SelectValue placeholder="Unit"/>
                                         </SelectTrigger>
                                         <SelectContent>
                                             {initialUnits.map((unitRow) => (
@@ -346,15 +347,15 @@ export default function RecipeForm({
                     {/* Schritte */}
                     <div className="grid gap-3">
                         <div className="flex items-center justify-between">
-                            <Label>Schritte</Label>
+                            <Label>Steps</Label>
                             <Button type="button" variant="secondary" onClick={addStep}>
-                                <Plus className="mr-2 size-4"/> Schritt hinzufügen
+                                <Plus className="mr-2 size-4"/> Add Step
                             </Button>
                         </div>
                         {steps.map((s, i) => (
                             <div key={i} className="flex items-start gap-2">
                                 <Textarea
-                                    placeholder={`Schritt ${i + 1}`}
+                                    placeholder={`Step ${i + 1}`}
                                     value={s.text}
                                     onChange={(e) => updateStep(i, e.target.value)}
                                     rows={2}
@@ -369,7 +370,7 @@ export default function RecipeForm({
                     <div>
                         <Button type="submit" disabled={isPending} className="w-full">
                             {isPending ? <Loader2 className="mr-2 size-4 animate-spin"/> : null}
-                            Rezept speichern
+                            Save Recipe
                         </Button>
                         {message && <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap">{message}</p>}
                     </div>
