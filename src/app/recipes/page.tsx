@@ -1,23 +1,2 @@
-import { NavigationBar } from "@/components/NavigationBar";
-import RecipeOverview from "@/components/RecipeOverview";
-import OpenCreateRecipeButton from "./_components/open_create_recipe_button";
-
-interface PageProps {
-  searchParams: Promise<{ page?: string }>;
-}
-
-export default function Page({ searchParams }: PageProps) {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <NavigationBar />
-      <div className="bg-gray-50 p-8">
-        <div className="container grid-cols-3 overflow-auto p-3 max-w-7xl mx-auto">
-          <OpenCreateRecipeButton label="Add recipe" />
-        </div>
-        <div className="flex-1 overflow-auto">
-          <RecipeOverview searchParams={searchParams} />
-        </div>
-      </div>
-    </div>
-  );
-}
+// server component by default
+export { default } from "@/features/recipes/page";
