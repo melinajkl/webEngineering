@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/shared/ui/dialog";
-import RecipeForm from "@/features/recipes/ui/NewRecipePopup";
+import RecipeForm from "@/features/recipes/ui/new_recipe_popup";
 import type { UnitRow } from "@/server/db/queries/getUnits";
 import type { FoodCategoryRow } from "@/server/db/queries/getFoodCategory";
 import type { IngredientRow } from "@/server/db/queries/getIngredients";

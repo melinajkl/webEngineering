@@ -7,7 +7,7 @@ import {
 } from "@/shared/ui/dialog";
 import { Badge } from "@/shared/ui/badge";
 import { IconChefHat, IconClock, IconUser } from "@tabler/icons-react";
-import { IngredientsTable } from "@/features/recipes/ui/IngredientsTable";
+import { IngredientsTable } from "@/features/recipes/ui/ingredients_table";
 
 interface RecipeDetailModalProps {
   recipe: {

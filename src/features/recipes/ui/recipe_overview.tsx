@@ -1,5 +1,5 @@
 import { getRecipesWithAttributes } from "@/server/db/queries/getRecipes";
-import { RecipeCard } from "@/features/recipes/ui/RecipeCard";
+import { RecipeCard } from "@/features/recipes/ui/recipe_card";
 import {
   Pagination,
   PaginationContent,

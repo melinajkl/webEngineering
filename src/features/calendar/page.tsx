@@ -1,6 +1,6 @@
 import * as React from "react";
-import { NavigationBar } from "@/features/shoppinglist/ui/NavigationBar";
-import { CalendarPage } from "./ui/calendarOverview";
+import { NavigationBar } from "@/features/shoppinglist/ui/navigation_bar";
+import { CalendarPage } from "./ui/calendar_overview";
 
 export default function Page() {
   return (

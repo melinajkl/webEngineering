@@ -1,5 +1,5 @@
-import { NavigationBar } from "@/features/shoppinglist/ui/NavigationBar";
-import { ShoppingList } from "@/features/shoppinglist/ui/ShoppingList";
+import { NavigationBar } from "@/features/shoppinglist/ui/navigation_bar";
+import { ShoppingList } from "@/features/shoppinglist/ui/shopping_list";
 import { getShoppingList } from "@/server/db/queries/getShoppingList";
 
 export default async function Page() {

@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/shared/ui/card";
 import { Badge } from "@/shared/ui/badge";
 import { IconClock, IconChefHat } from "@tabler/icons-react";
 import { useState } from "react";
-import { RecipeDetailModal } from "@/features/recipes/ui/RecipeDetailModal";
+import { RecipeDetailModal } from "@/features/recipes/ui/recipe_detail_modal";
 import { getRecipeIngredientsAction } from "@/features/recipes/actions/get_recipe_ingredients";
 import { getRecipeStepsAction } from "@/features/recipes/actions/get_recipe_steps";
 

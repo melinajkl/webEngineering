@@ -1,5 +1,5 @@
-import { NavigationBar } from "@/features/shoppinglist/ui/NavigationBar";
-import RecipeOverview from "@/features/recipes/ui/RecipeOverview";
+import { NavigationBar } from "@/features/shoppinglist/ui/navigation_bar";
+import RecipeOverview from "@/features/recipes/ui/recipe_overview";
 import OpenCreateRecipeButton from "@/features/recipes/ui/open_create_recipe_button";
 
 interface PageProps {

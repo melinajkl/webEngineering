@@ -1,13 +1,13 @@
 "use client"
 import { useState } from "react";
-import { ShoppingItem } from "@/features/shoppinglist/ui/ShoppingItem";
+import { ShoppingItem } from "@/features/shoppinglist/ui/shopping_item";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import { shoppingListRow } from "@/server/db/queries/getShoppingList";
 import {
   toggleShoppingListItem,
   deleteShoppingListItem,
-} from "@/features/shoppinglist/actions/shoppingListActions";
+} from "@/features/shoppinglist/actions/shopping_list_actions";
 
 type Filter = "all" | "active" | "done";
 
