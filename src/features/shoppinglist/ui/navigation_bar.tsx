@@ -15,7 +15,6 @@ export function NavigationBar() {
 
   const navItems = [
     { path: "/recipes", label: "Recipes" },
-    { path: "/calendar", label: "Calendar" },
     { path: "/shoppinglist", label: "Shopping List" },
   ];
 
