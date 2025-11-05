@@ -87,27 +87,3 @@ export const shoppingList = sqliteTable("SHOPPING_LIST", {
   unitId: integer("unitId").references(() => unit.id).notNull(),
   checked: integer("checked", { mode: "boolean" }).notNull(),
 });
-
-// --- RELATIONS (optional, for Drizzle ORM) ---
-
-export const recipeRelations = relations(recipe, ({ many, one }) => ({
-  steps: many(recipeSteps),
-  ingredients: many(recipeIngredients),
-  attributes: many(recipeAttributes),
-  category: one(foodCat, {
-    fields: [recipe.foodCategory],
-    references: [foodCat.id],
-  }),
-}));
-
-export const ingredientRelations = relations(ingredients, ({ one, many }) => ({
-  category: one(ingredientCat, {
-    fields: [ingredients.category],
-    references: [ingredientCat.id],
-  }),
-  unit: one(unit, {
-    fields: [ingredients.unit],
-    references: [unit.id],
-  }),
-  recipeLinks: many(recipeIngredients),
-}));

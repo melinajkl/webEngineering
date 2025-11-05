@@ -1,4 +1,6 @@
-import { db } from "@/server/db";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database from "better-sqlite3";
+import { eq, inArray } from "drizzle-orm";
 import {
   foodCat,
   recipeCat,
@@ -9,387 +11,770 @@ import {
   recipeIngredients,
   recipeAttributes,
   recipeSteps,
-  shoppingList,
-  calendar,
-} from "./schema";
+} from "./schema"; // <-- adjust if needed
+
+const sqlite = new Database("localdb.sqlite");
+const db = drizzle(sqlite);
 
 async function seed() {
-  console.log("🌱 Starting database seed...");
+  console.log("🌱 Seeding…");
 
-  // --- CATEGORIES ---
-  await db.insert(foodCat).values([
-    { id: 1, name: "Breakfast" },
-    { id: 2, name: "Lunch" },
-    { id: 3, name: "Dinner" },
-    { id: 4, name: "Dessert" },
-    { id: 5, name: "Snack" },
+  // ---------- MASTER DATA ----------
+  const foodCats = [
+    "Breakfast",
+    "Lunch",
+    "Dinner",
+    "Dessert",
+    "Snack",
+    "Drink",
+  ];
+
+  const recipeCats = [
+    "Vegetarian",
+    "Vegan",
+    "Gluten-Free",
+    "High Protein",
+    "Quick & Easy",
+    "One-Pot",
+    "30-Minute",
+  ];
+
+  const ingredientCats = [
+    "Vegetable",
+    "Fruit",
+    "Grain",
+    "Dairy",
+    "Protein",
+    "Spices",
+    "Oil",
+    "Herb",
+    "Legume",
+    "Bakery",
+    "Condiment",
+    "Nut/Seed",
+    "Sweetener",
+    "Beverage",
+  ];
+
+  const units = [
+    { name: "Gram", shortForm: "g" },
+    { name: "Milliliter", shortForm: "ml" },
+    { name: "Piece", shortForm: "pc" },
+    { name: "Teaspoon", shortForm: "tsp" },
+    { name: "Tablespoon", shortForm: "tbsp" },
+    { name: "Cup", shortForm: "cup" },
+  ];
+
+  await db
+    .insert(foodCat)
+    .values(foodCats.map((name) => ({ name })))
+    .onConflictDoNothing();
+  await db
+    .insert(recipeCat)
+    .values(recipeCats.map((name) => ({ name })))
+    .onConflictDoNothing();
+  await db
+    .insert(ingredientCat)
+    .values(ingredientCats.map((name) => ({ name })))
+    .onConflictDoNothing();
+  await db.insert(unit).values(units).onConflictDoNothing();
+
+  // fetch ids → build maps
+  const [foodCatRows, recipeCatRows, ingCatRows, unitRows] = await Promise.all([
+    db.select().from(foodCat),
+    db.select().from(recipeCat),
+    db.select().from(ingredientCat),
+    db.select().from(unit),
   ]);
 
-  await db.insert(recipeCat).values([
-    { id: 1, name: "Vegetarian" },
-    { id: 2, name: "Vegan" },
-    { id: 3, name: "Gluten-Free" },
-    { id: 4, name: "Quick & Easy" },
-    { id: 5, name: "Healthy" },
-  ]);
+  const foodCatId = Object.fromEntries(foodCatRows.map((r) => [r.name, r.id]));
+  const recipeCatId = Object.fromEntries(
+    recipeCatRows.map((r) => [r.name, r.id])
+  );
+  const ingCatId = Object.fromEntries(ingCatRows.map((r) => [r.name, r.id]));
+  const unitId = Object.fromEntries(unitRows.map((r) => [r.shortForm, r.id]));
 
-  await db.insert(ingredientCat).values([
-    { id: 1, name: "Dairy" },
-    { id: 2, name: "Vegetables" },
-    { id: 3, name: "Fruits" },
-    { id: 4, name: "Grains" },
-    { id: 5, name: "Proteins" },
-    { id: 6, name: "Oils & Condiments" },
-  ]);
+  // ---------- INGREDIENTS CATALOG ----------
+  // Default "unit" = typical storage unit for the ingredient.
+  const ING = [
+    ["Egg", "Protein", "pc"],
+    ["Milk", "Dairy", "ml"],
+    ["Flour", "Grain", "g"],
+    ["Sugar", "Sweetener", "g"],
+    ["Butter", "Dairy", "g"],
+    ["Salt", "Spices", "tsp"],
+    ["Pepper", "Spices", "tsp"],
+    ["Olive Oil", "Oil", "tbsp"],
+    ["Garlic", "Vegetable", "pc"],
+    ["Onion", "Vegetable", "pc"],
+    ["Tomato", "Vegetable", "pc"],
+    ["Cucumber", "Vegetable", "pc"],
+    ["Lettuce", "Vegetable", "pc"],
+    ["Lemon", "Fruit", "pc"],
+    ["Banana", "Fruit", "pc"],
+    ["Apple", "Fruit", "pc"],
+    ["Chicken Breast", "Protein", "g"],
+    ["Beef Mince", "Protein", "g"],
+    ["Rice", "Grain", "g"],
+    ["Pasta", "Grain", "g"],
+    ["Tomato Sauce", "Condiment", "ml"],
+    ["Canned Tomatoes", "Condiment", "g"],
+    ["Parmesan", "Dairy", "g"],
+    ["Cheddar", "Dairy", "g"],
+    ["Mozzarella", "Dairy", "g"],
+    ["Basil", "Herb", "tbsp"],
+    ["Parsley", "Herb", "tbsp"],
+    ["Coriander", "Herb", "tbsp"],
+    ["Cumin", "Spices", "tsp"],
+    ["Paprika", "Spices", "tsp"],
+    ["Chili Flakes", "Spices", "tsp"],
+    ["Curry Powder", "Spices", "tsp"],
+    ["Coconut Milk", "Dairy", "ml"], // treat as dairy-ish
+    ["Chickpeas", "Legume", "g"],
+    ["Lentils (red)", "Legume", "g"],
+    ["Kidney Beans", "Legume", "g"],
+    ["Avocado", "Fruit", "pc"],
+    ["Bread Roll", "Bakery", "pc"],
+    ["Tortilla", "Bakery", "pc"],
+    ["Oats", "Grain", "g"],
+    ["Honey", "Sweetener", "tbsp"],
+    ["Yogurt", "Dairy", "ml"],
+    ["Spinach", "Vegetable", "g"],
+    ["Bell Pepper", "Vegetable", "pc"],
+    ["Carrot", "Vegetable", "pc"],
+    ["Mushroom", "Vegetable", "g"],
+    ["Soy Sauce", "Condiment", "tbsp"],
+    ["Pesto", "Condiment", "tbsp"],
+    ["Baking Powder", "Bakery", "tsp"],
+    ["Vanilla", "Condiment", "tsp"],
+    ["Maple Syrup", "Sweetener", "tbsp"],
+    ["Water", "Beverage", "ml"],
+    ["Milk (plant)", "Beverage", "ml"],
+    ["Egg Noodles", "Grain", "g"],
+    ["Tuna (canned)", "Protein", "g"],
+    ["Feta", "Dairy", "g"],
+    ["Corn", "Vegetable", "g"],
+    ["Green Peas", "Vegetable", "g"],
+    ["Ginger", "Spices", "tsp"],
+    ["Lime", "Fruit", "pc"],
+  ] as const;
 
-  await db.insert(unit).values([
-    { id: 1, name: "gram", shortForm: "g" },
-    { id: 2, name: "milliliter", shortForm: "ml" },
-    { id: 3, name: "cup", shortForm: "cup" },
-    { id: 4, name: "tablespoon", shortForm: "tbsp" },
-    { id: 5, name: "teaspoon", shortForm: "tsp" },
-    { id: 6, name: "piece", shortForm: "pc" },
-  ]);
+  await db
+    .insert(ingredients)
+    .values(
+      ING.map(([name, cat, u]) => ({
+        name,
+        category: ingCatId[cat],
+        unit: unitId[u],
+      }))
+    )
+    .onConflictDoNothing();
 
-  // --- INGREDIENTS ---
-  await db.insert(ingredients).values([
-    { id: 1, name: "Eggs", category: 1, unit: 6 },
-    { id: 2, name: "Milk", category: 1, unit: 2 },
-    { id: 3, name: "Tomato", category: 2, unit: 6 },
-    { id: 4, name: "Onion", category: 2, unit: 6 },
-    { id: 5, name: "Garlic", category: 2, unit: 6 },
-    { id: 6, name: "Chicken Breast", category: 5, unit: 1 },
-    { id: 7, name: "Olive Oil", category: 6, unit: 2 },
-    { id: 8, name: "Pasta", category: 4, unit: 1 },
-    { id: 9, name: "Cheese", category: 1, unit: 1 },
-    { id: 10, name: "Salt", category: 6, unit: 5 },
-    { id: 11, name: "Bell Pepper", category: 2, unit: 6 },
-    { id: 12, name: "Broccoli", category: 2, unit: 6 },
-    { id: 13, name: "Salmon", category: 5, unit: 1 },
-    { id: 14, name: "Rice", category: 4, unit: 1 },
-    { id: 15, name: "Spinach", category: 2, unit: 6 },
-    { id: 16, name: "Mushroom", category: 2, unit: 6 },
-    { id: 17, name: "Lemon", category: 3, unit: 6 },
-    { id: 18, name: "Honey", category: 6, unit: 4 },
-    { id: 19, name: "Chickpea", category: 5, unit: 1 },
-    { id: 20, name: "Avocado", category: 3, unit: 6 },
-  ]);
+  // read back ingredient ids
+  const allIngs = await db.select().from(ingredients);
+  const ingId = Object.fromEntries(allIngs.map((i) => [i.name, i.id]));
 
-  // --- RECIPES (16+) ---
-  await db.insert(recipe).values([
+  // ---------- RECIPES (20+) ----------
+  type R = {
+    title: string;
+    prep: number;
+    cook: number;
+    portions: number;
+    foodCategory: keyof typeof foodCatId;
+    attributes: (keyof typeof recipeCatId)[];
+    items: { name: keyof typeof ingId; amount: number }[];
+    steps: string[];
+  };
+
+  const RECIPES: R[] = [
     {
-      id: 1,
-      title: "Scrambled Eggs",
-      prepareTime: 5,
-      cookingTime: 5,
+      title: "Pancakes",
+      prep: 10,
+      cook: 15,
+      portions: 4,
+      foodCategory: "Breakfast",
+      attributes: ["Vegetarian", "Quick & Easy"],
+      items: [
+        { name: "Flour", amount: 150 },
+        { name: "Milk", amount: 200 },
+        { name: "Egg", amount: 2 },
+        { name: "Sugar", amount: 30 },
+        { name: "Butter", amount: 20 },
+        { name: "Baking Powder", amount: 2 },
+        { name: "Salt", amount: 0 }, // pinch (keep as 0; unit comes from ingredient default)
+      ],
+      steps: [
+        "Whisk eggs, milk, and sugar.",
+        "Add flour, baking powder, and pinch of salt; whisk smooth.",
+        "Butter pan; cook pancakes golden on both sides.",
+      ],
+    },
+    {
+      title: "Spaghetti Bolognese",
+      prep: 15,
+      cook: 40,
+      portions: 4,
+      foodCategory: "Dinner",
+      attributes: ["High Protein"],
+      items: [
+        { name: "Pasta", amount: 350 },
+        { name: "Beef Mince", amount: 400 },
+        { name: "Onion", amount: 1 },
+        { name: "Garlic", amount: 2 },
+        { name: "Canned Tomatoes", amount: 400 },
+        { name: "Tomato Sauce", amount: 200 },
+        { name: "Olive Oil", amount: 2 },
+        { name: "Basil", amount: 1 },
+        { name: "Salt", amount: 1 },
+        { name: "Pepper", amount: 1 },
+      ],
+      steps: [
+        "Sauté onion and garlic in olive oil.",
+        "Brown beef; add tomatoes and sauce; simmer 25–30 min.",
+        "Boil pasta al dente; combine and season.",
+      ],
+    },
+    {
+      title: "Tomato Soup",
+      prep: 10,
+      cook: 25,
+      portions: 4,
+      foodCategory: "Lunch",
+      attributes: ["Vegetarian", "30-Minute"],
+      items: [
+        { name: "Onion", amount: 1 },
+        { name: "Garlic", amount: 1 },
+        { name: "Olive Oil", amount: 1 },
+        { name: "Canned Tomatoes", amount: 800 },
+        { name: "Water", amount: 300 },
+        { name: "Basil", amount: 1 },
+        { name: "Salt", amount: 1 },
+        { name: "Pepper", amount: 1 },
+      ],
+      steps: [
+        "Sauté onion/garlic in oil.",
+        "Add tomatoes and water; simmer 15 min.",
+        "Blend smooth; season and serve.",
+      ],
+    },
+    {
+      title: "Caesar Salad (Veggie)",
+      prep: 15,
+      cook: 0,
       portions: 2,
-      foodCategory: 1,
+      foodCategory: "Lunch",
+      attributes: ["Vegetarian", "Quick & Easy"],
+      items: [
+        { name: "Lettuce", amount: 1 },
+        { name: "Parmesan", amount: 40 },
+        { name: "Bread Roll", amount: 1 },
+        { name: "Olive Oil", amount: 1 },
+        { name: "Yogurt", amount: 80 },
+        { name: "Lemon", amount: 0 },
+        { name: "Garlic", amount: 1 },
+        { name: "Salt", amount: 1 },
+        { name: "Pepper", amount: 1 },
+      ],
+      steps: [
+        "Toast bread cubes with olive oil for croutons.",
+        "Whisk yogurt, lemon juice, minced garlic, salt, pepper.",
+        "Toss lettuce, dressing, croutons; shave parmesan.",
+      ],
     },
     {
-      id: 2,
-      title: "Pasta Carbonara",
-      prepareTime: 10,
-      cookingTime: 15,
-      portions: 4,
-      foodCategory: 3,
-    },
-    {
-      id: 3,
-      title: "Tomato Salad",
-      prepareTime: 10,
-      cookingTime: 0,
-      portions: 3,
-      foodCategory: 2,
-    },
-    {
-      id: 4,
-      title: "Grilled Chicken with Broccoli",
-      prepareTime: 15,
-      cookingTime: 25,
-      portions: 4,
-      foodCategory: 3,
-    },
-    {
-      id: 5,
-      title: "Vegetable Stir Fry",
-      prepareTime: 10,
-      cookingTime: 12,
-      portions: 3,
-      foodCategory: 2,
-    },
-    {
-      id: 6,
-      title: "Garlic Shrimp Pasta",
-      prepareTime: 10,
-      cookingTime: 15,
-      portions: 4,
-      foodCategory: 3,
-    },
-    {
-      id: 7,
-      title: "Caprese Salad",
-      prepareTime: 10,
-      cookingTime: 0,
+      title: "Veggie Stir-Fry",
+      prep: 10,
+      cook: 10,
       portions: 2,
-      foodCategory: 2,
+      foodCategory: "Dinner",
+      attributes: ["Vegan", "30-Minute", "One-Pot"],
+      items: [
+        { name: "Bell Pepper", amount: 1 },
+        { name: "Carrot", amount: 1 },
+        { name: "Mushroom", amount: 150 },
+        { name: "Spinach", amount: 100 },
+        { name: "Soy Sauce", amount: 2 },
+        { name: "Olive Oil", amount: 1 },
+        { name: "Garlic", amount: 1 },
+        { name: "Ginger", amount: 1 },
+      ],
+      steps: [
+        "Heat oil; fry garlic/ginger briefly.",
+        "Add vegetables; stir-fry 5–6 min.",
+        "Finish with soy sauce; serve with rice.",
+      ],
     },
     {
-      id: 8,
-      title: "Mushroom Risotto",
-      prepareTime: 15,
-      cookingTime: 30,
-      portions: 4,
-      foodCategory: 3,
-    },
-    {
-      id: 9,
-      title: "Lemon Baked Salmon",
-      prepareTime: 10,
-      cookingTime: 20,
-      portions: 3,
-      foodCategory: 3,
-    },
-    {
-      id: 10,
-      title: "Spinach and Cheese Omelette",
-      prepareTime: 5,
-      cookingTime: 8,
-      portions: 2,
-      foodCategory: 1,
-    },
-    {
-      id: 11,
-      title: "Chickpea Buddha Bowl",
-      prepareTime: 15,
-      cookingTime: 0,
-      portions: 2,
-      foodCategory: 2,
-    },
-    {
-      id: 12,
-      title: "Honey Garlic Chicken",
-      prepareTime: 10,
-      cookingTime: 25,
-      portions: 4,
-      foodCategory: 3,
-    },
-    {
-      id: 13,
-      title: "Avocado Toast",
-      prepareTime: 5,
-      cookingTime: 3,
+      title: "Omelette",
+      prep: 5,
+      cook: 5,
       portions: 1,
-      foodCategory: 1,
+      foodCategory: "Breakfast",
+      attributes: ["Vegetarian", "Quick & Easy", "30-Minute"],
+      items: [
+        { name: "Egg", amount: 3 },
+        { name: "Butter", amount: 10 },
+        { name: "Salt", amount: 1 },
+        { name: "Pepper", amount: 1 },
+        { name: "Cheddar", amount: 30 },
+        { name: "Parsley", amount: 1 },
+      ],
+      steps: [
+        "Beat eggs with salt/pepper.",
+        "Melt butter; add eggs; gently stir.",
+        "Add cheese, fold, top with parsley.",
+      ],
     },
     {
-      id: 14,
-      title: "Vegetable Soup",
-      prepareTime: 15,
-      cookingTime: 30,
+      title: "Chili con Carne",
+      prep: 15,
+      cook: 45,
       portions: 4,
-      foodCategory: 2,
+      foodCategory: "Dinner",
+      attributes: ["High Protein", "One-Pot"],
+      items: [
+        { name: "Beef Mince", amount: 500 },
+        { name: "Onion", amount: 1 },
+        { name: "Garlic", amount: 2 },
+        { name: "Kidney Beans", amount: 240 },
+        { name: "Canned Tomatoes", amount: 400 },
+        { name: "Paprika", amount: 2 },
+        { name: "Cumin", amount: 1 },
+        { name: "Chili Flakes", amount: 1 },
+        { name: "Salt", amount: 1 },
+        { name: "Olive Oil", amount: 1 },
+      ],
+      steps: [
+        "Sauté onion/garlic; brown beef.",
+        "Add tomatoes, beans, spices; simmer 30–35 min.",
+        "Adjust heat and seasoning.",
+      ],
     },
     {
-      id: 15,
-      title: "Stuffed Bell Peppers",
-      prepareTime: 20,
-      cookingTime: 30,
-      portions: 4,
-      foodCategory: 3,
+      title: "Guacamole",
+      prep: 10,
+      cook: 0,
+      portions: 2,
+      foodCategory: "Snack",
+      attributes: ["Vegan", "Gluten-Free", "Quick & Easy"],
+      items: [
+        { name: "Avocado", amount: 2 },
+        { name: "Lime", amount: 1 },
+        { name: "Onion", amount: 0.5 as any }, // half; stored as pc – fine to round when displaying
+        { name: "Salt", amount: 1 },
+        { name: "Coriander", amount: 1 },
+      ],
+      steps: [
+        "Mash avocado.",
+        "Stir in lime juice, finely diced onion, coriander, salt.",
+        "Serve immediately.",
+      ],
     },
     {
-      id: 16,
       title: "Greek Salad",
-      prepareTime: 10,
-      cookingTime: 0,
+      prep: 10,
+      cook: 0,
+      portions: 2,
+      foodCategory: "Lunch",
+      attributes: ["Vegetarian", "Gluten-Free", "Quick & Easy"],
+      items: [
+        { name: "Tomato", amount: 2 },
+        { name: "Cucumber", amount: 1 },
+        { name: "Onion", amount: 0.5 as any },
+        { name: "Feta", amount: 120 },
+        { name: "Olive Oil", amount: 2 },
+        { name: "Lemon", amount: 0 },
+        { name: "Salt", amount: 1 },
+        { name: "Pepper", amount: 1 },
+        { name: "Basil", amount: 1 },
+      ],
+      steps: [
+        "Chop veg and feta.",
+        "Dress with olive oil and lemon juice.",
+        "Season and toss with basil.",
+      ],
+    },
+    {
+      title: "Pesto Pasta",
+      prep: 5,
+      cook: 12,
+      portions: 2,
+      foodCategory: "Dinner",
+      attributes: ["Vegetarian", "30-Minute"],
+      items: [
+        { name: "Pasta", amount: 250 },
+        { name: "Pesto", amount: 3 },
+        { name: "Parmesan", amount: 30 },
+        { name: "Salt", amount: 1 },
+      ],
+      steps: [
+        "Cook pasta al dente in salted water.",
+        "Reserve some pasta water; toss with pesto.",
+        "Top with parmesan.",
+      ],
+    },
+    {
+      title: "Banana Bread",
+      prep: 15,
+      cook: 55,
+      portions: 10,
+      foodCategory: "Dessert",
+      attributes: ["Vegetarian"],
+      items: [
+        { name: "Banana", amount: 3 },
+        { name: "Flour", amount: 250 },
+        { name: "Sugar", amount: 120 },
+        { name: "Butter", amount: 80 },
+        { name: "Egg", amount: 2 },
+        { name: "Baking Powder", amount: 2 },
+        { name: "Vanilla", amount: 1 },
+        { name: "Salt", amount: 1 },
+      ],
+      steps: [
+        "Mash bananas; mix with melted butter, sugar, eggs, vanilla.",
+        "Fold in flour, baking powder, salt.",
+        "Bake 50–60 min at 175°C.",
+      ],
+    },
+    {
+      title: "Shakshuka",
+      prep: 10,
+      cook: 20,
+      portions: 2,
+      foodCategory: "Breakfast",
+      attributes: ["Vegetarian", "One-Pot"],
+      items: [
+        { name: "Onion", amount: 1 },
+        { name: "Garlic", amount: 2 },
+        { name: "Bell Pepper", amount: 1 },
+        { name: "Canned Tomatoes", amount: 400 },
+        { name: "Paprika", amount: 2 },
+        { name: "Cumin", amount: 1 },
+        { name: "Egg", amount: 4 },
+        { name: "Olive Oil", amount: 1 },
+        { name: "Parsley", amount: 1 },
+        { name: "Salt", amount: 1 },
+        { name: "Pepper", amount: 1 },
+      ],
+      steps: [
+        "Cook onion/pepper/garlic with spices.",
+        "Add tomatoes; simmer to thicken.",
+        "Make wells; crack eggs; cover until set.",
+      ],
+    },
+    {
+      title: "Chicken Curry",
+      prep: 15,
+      cook: 25,
       portions: 3,
-      foodCategory: 2,
+      foodCategory: "Dinner",
+      attributes: ["High Protein", "30-Minute"],
+      items: [
+        { name: "Chicken Breast", amount: 400 },
+        { name: "Onion", amount: 1 },
+        { name: "Garlic", amount: 2 },
+        { name: "Curry Powder", amount: 2 },
+        { name: "Coconut Milk", amount: 300 },
+        { name: "Olive Oil", amount: 1 },
+        { name: "Salt", amount: 1 },
+        { name: "Pepper", amount: 1 },
+      ],
+      steps: [
+        "Sauté onion/garlic; add curry powder.",
+        "Add chicken; brown lightly.",
+        "Pour coconut milk; simmer 12–15 min.",
+      ],
     },
     {
-      id: 17,
-      title: "Garlic Butter Rice",
-      prepareTime: 5,
-      cookingTime: 20,
+      title: "Fried Rice",
+      prep: 10,
+      cook: 10,
+      portions: 2,
+      foodCategory: "Dinner",
+      attributes: ["Quick & Easy", "One-Pot"],
+      items: [
+        { name: "Rice", amount: 300 },
+        { name: "Egg", amount: 2 },
+        { name: "Green Peas", amount: 100 },
+        { name: "Carrot", amount: 1 },
+        { name: "Onion", amount: 0.5 as any },
+        { name: "Soy Sauce", amount: 2 },
+        { name: "Olive Oil", amount: 1 },
+      ],
+      steps: [
+        "Scramble eggs; set aside.",
+        "Stir-fry onion, carrot, peas; add rice.",
+        "Season with soy sauce; fold in eggs.",
+      ],
+    },
+    {
+      title: "Red Lentil Soup",
+      prep: 10,
+      cook: 25,
       portions: 4,
-      foodCategory: 3,
-    },
-  ]);
-
-  // --- RECIPE INGREDIENTS ---
-  await db.insert(recipeIngredients).values([
-    // Scrambled Eggs
-    { recipeId: 1, ingredientId: 1, amount: 3 },
-    { recipeId: 1, ingredientId: 2, amount: 100 },
-    { recipeId: 1, ingredientId: 10, amount: 1 },
-    // Pasta Carbonara
-    { recipeId: 2, ingredientId: 8, amount: 400 },
-    { recipeId: 2, ingredientId: 1, amount: 4 },
-    { recipeId: 2, ingredientId: 9, amount: 200 },
-    // Tomato Salad
-    { recipeId: 3, ingredientId: 3, amount: 500 },
-    { recipeId: 3, ingredientId: 7, amount: 50 },
-    { recipeId: 3, ingredientId: 10, amount: 2 },
-    // Grilled Chicken with Broccoli
-    { recipeId: 4, ingredientId: 6, amount: 500 },
-    { recipeId: 4, ingredientId: 12, amount: 400 },
-    { recipeId: 4, ingredientId: 7, amount: 30 },
-    // Vegetable Stir Fry
-    { recipeId: 5, ingredientId: 11, amount: 200 },
-    { recipeId: 5, ingredientId: 4, amount: 150 },
-    { recipeId: 5, ingredientId: 5, amount: 30 },
-    // Garlic Shrimp Pasta
-    { recipeId: 6, ingredientId: 8, amount: 350 },
-    { recipeId: 6, ingredientId: 5, amount: 50 },
-    { recipeId: 6, ingredientId: 7, amount: 40 },
-    // Caprese Salad
-    { recipeId: 7, ingredientId: 3, amount: 400 },
-    { recipeId: 7, ingredientId: 9, amount: 200 },
-    { recipeId: 7, ingredientId: 7, amount: 30 },
-    // Mushroom Risotto
-    { recipeId: 8, ingredientId: 14, amount: 300 },
-    { recipeId: 8, ingredientId: 16, amount: 250 },
-    { recipeId: 8, ingredientId: 2, amount: 500 },
-    // Lemon Baked Salmon
-    { recipeId: 9, ingredientId: 13, amount: 400 },
-    { recipeId: 9, ingredientId: 17, amount: 100 },
-    { recipeId: 9, ingredientId: 7, amount: 30 },
-    // Spinach and Cheese Omelette
-    { recipeId: 10, ingredientId: 1, amount: 3 },
-    { recipeId: 10, ingredientId: 15, amount: 100 },
-    { recipeId: 10, ingredientId: 9, amount: 100 },
-    // Chickpea Buddha Bowl
-    { recipeId: 11, ingredientId: 19, amount: 200 },
-    { recipeId: 11, ingredientId: 15, amount: 150 },
-    { recipeId: 11, ingredientId: 20, amount: 100 },
-    // Honey Garlic Chicken
-    { recipeId: 12, ingredientId: 6, amount: 600 },
-    { recipeId: 12, ingredientId: 18, amount: 60 },
-    { recipeId: 12, ingredientId: 5, amount: 40 },
-    // Avocado Toast
-    { recipeId: 13, ingredientId: 20, amount: 100 },
-    { recipeId: 13, ingredientId: 17, amount: 50 },
-    { recipeId: 13, ingredientId: 10, amount: 1 },
-    // Vegetable Soup
-    { recipeId: 14, ingredientId: 3, amount: 300 },
-    { recipeId: 14, ingredientId: 4, amount: 200 },
-    { recipeId: 14, ingredientId: 5, amount: 50 },
-    // Stuffed Bell Peppers
-    { recipeId: 15, ingredientId: 11, amount: 400 },
-    { recipeId: 15, ingredientId: 14, amount: 200 },
-    { recipeId: 15, ingredientId: 4, amount: 100 },
-    // Greek Salad
-    { recipeId: 16, ingredientId: 3, amount: 300 },
-    { recipeId: 16, ingredientId: 11, amount: 200 },
-    { recipeId: 16, ingredientId: 9, amount: 150 },
-    // Garlic Butter Rice
-    { recipeId: 17, ingredientId: 14, amount: 400 },
-    { recipeId: 17, ingredientId: 5, amount: 60 },
-    { recipeId: 17, ingredientId: 7, amount: 50 },
-  ]);
-
-  // --- RECIPE ATTRIBUTES ---
-  await db.insert(recipeAttributes).values([
-    { recipeId: 1, recipeCat: 1 },
-    { recipeId: 1, recipeCat: 4 },
-    { recipeId: 2, recipeCat: 4 },
-    { recipeId: 3, recipeCat: 1 },
-    { recipeId: 3, recipeCat: 5 },
-    { recipeId: 4, recipeCat: 4 },
-    { recipeId: 4, recipeCat: 5 },
-    { recipeId: 5, recipeCat: 1 },
-    { recipeId: 5, recipeCat: 4 },
-    { recipeId: 6, recipeCat: 4 },
-    { recipeId: 7, recipeCat: 1 },
-    { recipeId: 7, recipeCat: 5 },
-    { recipeId: 8, recipeCat: 1 },
-    { recipeId: 9, recipeCat: 5 },
-    { recipeId: 9, recipeCat: 4 },
-    { recipeId: 10, recipeCat: 1 },
-    { recipeId: 10, recipeCat: 4 },
-    { recipeId: 11, recipeCat: 2 },
-    { recipeId: 11, recipeCat: 5 },
-    { recipeId: 12, recipeCat: 4 },
-    { recipeId: 13, recipeCat: 1 },
-    { recipeId: 13, recipeCat: 4 },
-    { recipeId: 14, recipeCat: 1 },
-    { recipeId: 14, recipeCat: 5 },
-    { recipeId: 15, recipeCat: 1 },
-    { recipeId: 16, recipeCat: 1 },
-    { recipeId: 16, recipeCat: 5 },
-    { recipeId: 17, recipeCat: 1 },
-    { recipeId: 17, recipeCat: 4 },
-  ]);
-
-  // --- RECIPE STEPS (sample for new recipes) ---
-  await db.insert(recipeSteps).values([
-    { id: 1, recipeId: 1, stepNumber: 1, step: "Crack eggs into a bowl" },
-    { id: 2, recipeId: 1, stepNumber: 2, step: "Beat eggs with salt" },
-    {
-      id: 3,
-      recipeId: 1,
-      stepNumber: 3,
-      step: "Cook in buttered pan on medium heat",
-    },
-    { id: 4, recipeId: 2, stepNumber: 1, step: "Boil pasta in salted water" },
-    { id: 5, recipeId: 2, stepNumber: 2, step: "Mix eggs and cheese" },
-    {
-      id: 6,
-      recipeId: 2,
-      stepNumber: 3,
-      step: "Combine pasta with egg mixture off heat",
-    },
-    { id: 7, recipeId: 3, stepNumber: 1, step: "Slice tomatoes" },
-    {
-      id: 8,
-      recipeId: 3,
-      stepNumber: 2,
-      step: "Drizzle with olive oil and salt",
-    },
-  ]);
-
-  // --- SHOPPING LIST ---
-  await db.insert(shoppingList).values([
-    {
-      id: 1,
-      ingredientId: 1,
-      amount: 12,
-      unitId: 6,
-      checked: false,
-      dateOfUse: Date.now(),
+      foodCategory: "Lunch",
+      attributes: ["Vegan", "Gluten-Free", "One-Pot"],
+      items: [
+        { name: "Onion", amount: 1 },
+        { name: "Garlic", amount: 2 },
+        { name: "Lentils (red)", amount: 250 },
+        { name: "Cumin", amount: 1 },
+        { name: "Paprika", amount: 1 },
+        { name: "Water", amount: 1000 },
+        { name: "Salt", amount: 1 },
+        { name: "Olive Oil", amount: 1 },
+      ],
+      steps: [
+        "Sauté onion/garlic in oil.",
+        "Add lentils, spices, water; simmer 20–25 min.",
+        "Blend partly if desired; season.",
+      ],
     },
     {
-      id: 2,
-      ingredientId: 6,
-      amount: 500,
-      unitId: 1,
-      checked: false,
-      dateOfUse: Date.now(),
+      title: "Tacos (Beef)",
+      prep: 10,
+      cook: 12,
+      portions: 3,
+      foodCategory: "Dinner",
+      attributes: ["30-Minute"],
+      items: [
+        { name: "Beef Mince", amount: 350 },
+        { name: "Onion", amount: 1 },
+        { name: "Cumin", amount: 1 },
+        { name: "Paprika", amount: 1 },
+        { name: "Chili Flakes", amount: 1 },
+        { name: "Tortilla", amount: 6 },
+        { name: "Lettuce", amount: 1 },
+        { name: "Tomato", amount: 2 },
+        { name: "Cheddar", amount: 60 },
+      ],
+      steps: [
+        "Cook onion; brown beef; add spices.",
+        "Warm tortillas.",
+        "Assemble with lettuce, tomato, cheese.",
+      ],
     },
     {
-      id: 3,
-      ingredientId: 3,
-      amount: 1000,
-      unitId: 1,
-      checked: true,
-      dateOfUse: Date.now(),
+      title: "Classic Burger",
+      prep: 10,
+      cook: 10,
+      portions: 2,
+      foodCategory: "Dinner",
+      attributes: ["High Protein", "30-Minute"],
+      items: [
+        { name: "Beef Mince", amount: 300 },
+        { name: "Bread Roll", amount: 2 },
+        { name: "Lettuce", amount: 1 },
+        { name: "Tomato", amount: 1 },
+        { name: "Onion", amount: 0.5 as any },
+        { name: "Cheddar", amount: 40 },
+        { name: "Salt", amount: 1 },
+        { name: "Pepper", amount: 1 },
+        { name: "Olive Oil", amount: 1 },
+      ],
+      steps: [
+        "Form patties; season with salt/pepper.",
+        "Pan-sear to desired doneness; melt cheese.",
+        "Assemble in toasted rolls with toppings.",
+      ],
     },
-  ]);
+    {
+      title: "Pizza Margherita",
+      prep: 20,
+      cook: 12,
+      portions: 2,
+      foodCategory: "Dinner",
+      attributes: ["Vegetarian"],
+      items: [
+        { name: "Flour", amount: 250 },
+        { name: "Water", amount: 150 },
+        { name: "Olive Oil", amount: 1 },
+        { name: "Salt", amount: 1 },
+        { name: "Tomato Sauce", amount: 150 },
+        { name: "Mozzarella", amount: 150 },
+        { name: "Basil", amount: 1 },
+      ],
+      steps: [
+        "Make quick dough (flour, water, oil, salt); rest 10–15 min.",
+        "Shape; top with sauce and mozzarella.",
+        "Bake very hot until blistered; finish with basil.",
+      ],
+    },
+    {
+      title: "Oatmeal Bowl",
+      prep: 2,
+      cook: 5,
+      portions: 1,
+      foodCategory: "Breakfast",
+      attributes: ["Vegetarian", "Quick & Easy"],
+      items: [
+        { name: "Oats", amount: 60 },
+        { name: "Milk", amount: 200 },
+        { name: "Apple", amount: 1 },
+        { name: "Honey", amount: 1 },
+        { name: "Cinnamon" as any, amount: 0 }, // not in catalog; skipping dose by using honey only
+      ],
+      steps: [
+        "Simmer oats in milk 3–5 min.",
+        "Top with diced apple and honey.",
+      ],
+    },
+    {
+      title: "Smoothie Bowl",
+      prep: 5,
+      cook: 0,
+      portions: 1,
+      foodCategory: "Breakfast",
+      attributes: ["Vegetarian", "Gluten-Free", "Quick & Easy"],
+      items: [
+        { name: "Banana", amount: 1 },
+        { name: "Yogurt", amount: 150 },
+        { name: "Milk (plant)", amount: 100 },
+        { name: "Oats", amount: 20 },
+        { name: "Honey", amount: 1 },
+      ],
+      steps: [
+        "Blend banana, yogurt, plant milk, oats.",
+        "Pour into bowl; drizzle honey.",
+      ],
+    },
+    {
+      title: "Tuna Pasta",
+      prep: 5,
+      cook: 12,
+      portions: 2,
+      foodCategory: "Dinner",
+      attributes: ["30-Minute", "High Protein"],
+      items: [
+        { name: "Pasta", amount: 250 },
+        { name: "Tuna (canned)", amount: 160 },
+        { name: "Olive Oil", amount: 2 },
+        { name: "Garlic", amount: 1 },
+        { name: "Parsley", amount: 1 },
+        { name: "Lemon", amount: 0 },
+        { name: "Salt", amount: 1 },
+        { name: "Pepper", amount: 1 },
+      ],
+      steps: [
+        "Cook pasta; reserve some water.",
+        "Warm tuna with garlic in oil.",
+        "Toss with pasta, parsley, lemon juice.",
+      ],
+    },
+    {
+      title: "Chickpea Curry",
+      prep: 10,
+      cook: 20,
+      portions: 3,
+      foodCategory: "Dinner",
+      attributes: ["Vegan", "Gluten-Free", "30-Minute"],
+      items: [
+        { name: "Onion", amount: 1 },
+        { name: "Garlic", amount: 2 },
+        { name: "Curry Powder", amount: 2 },
+        { name: "Chickpeas", amount: 240 },
+        { name: "Coconut Milk", amount: 300 },
+        { name: "Olive Oil", amount: 1 },
+        { name: "Salt", amount: 1 },
+      ],
+      steps: [
+        "Sauté onion/garlic with curry powder.",
+        "Add chickpeas and coconut milk; simmer 12–15 min.",
+        "Season and serve with rice.",
+      ],
+    },
+    {
+      title: "Simple Tomato Tuna Salad",
+      prep: 7,
+      cook: 0,
+      portions: 2,
+      foodCategory: "Lunch",
+      attributes: ["High Protein", "Quick & Easy", "Gluten-Free"],
+      items: [
+        { name: "Tuna (canned)", amount: 160 },
+        { name: "Tomato", amount: 2 },
+        { name: "Cucumber", amount: 1 },
+        { name: "Onion", amount: 0.5 as any },
+        { name: "Olive Oil", amount: 1 },
+        { name: "Lemon", amount: 0 },
+        { name: "Salt", amount: 1 },
+        { name: "Pepper", amount: 1 },
+      ],
+      steps: [
+        "Flake tuna; dice vegetables.",
+        "Dress with olive oil and lemon juice.",
+        "Season and toss.",
+      ],
+    },
+  ];
 
-  // --- CALENDAR ---
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
+  // ---------- INSERT RECIPES ----------
+  for (const r of RECIPES) {
+    const [rec] = await db
+      .insert(recipe)
+      .values({
+        title: r.title,
+        prepareTime: r.prep,
+        cookingTime: r.cook,
+        portions: r.portions,
+        foodCategory: foodCatId[r.foodCategory],
+      })
+      .onConflictDoNothing()
+      .returning({ id: recipe.id });
 
-  await db.insert(calendar).values([
-    { date: today.getTime(), daytime: 1, recipe_id: 1 },
-    { date: today.getTime(), daytime: 3, recipe_id: 2 },
-    { date: tomorrow.getTime(), daytime: 1, recipe_id: 3 },
-  ]);
+    // If conflict (already exists), fetch its id
+    const recipeIdVal =
+      rec?.id ??
+      (
+        await db
+          .select({ id: recipe.id })
+          .from(recipe)
+          .where(eq(recipe.title, r.title))
+      )[0].id;
 
-  console.log("✅ Database seeded successfully!");
+    // Attributes
+    if (r.attributes?.length) {
+      await db
+        .insert(recipeAttributes)
+        .values(
+          r.attributes.map((a) => ({
+            recipeId: recipeIdVal,
+            recipeCat: recipeCatId[a],
+          }))
+        )
+        .onConflictDoNothing();
+    }
+
+    // Ingredients (skip ones not in catalog)
+    const usableItems = r.items.filter((it) => ingId[it.name as string]);
+    await db
+      .insert(recipeIngredients)
+      .values(
+        usableItems.map((it) => ({
+          recipeId: recipeIdVal,
+          ingredientId: ingId[it.name as string],
+          amount: Math.round(it.amount as number),
+        }))
+      )
+      .onConflictDoNothing();
+
+    // Steps
+    await db
+      .insert(recipeSteps)
+      .values(
+        r.steps.map((s, i) => ({
+          recipeId: recipeIdVal,
+          stepNumber: i + 1,
+          step: s,
+        }))
+      )
+      .onConflictDoNothing();
+  }
+
+  console.log("✅ Done. Inserted base data and 20+ recipes.");
 }
 
-seed().catch((err) => {
-  console.error("❌ Seeding failed:", err);
+seed().catch((e) => {
+  console.error("❌ Seed failed:", e);
   process.exit(1);
 });
