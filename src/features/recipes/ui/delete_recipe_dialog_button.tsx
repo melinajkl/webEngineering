@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { use, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import {
@@ -11,39 +11,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/shared/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/select";
-import type { RecipeListRow } from "@/server/db/queries/getRecipesList";
+import { Input } from "@/shared/ui/input";
 
 type ActionResult = { ok: boolean; message?: string; error?: string };
 
-type Props = {
-  label: string;
-  recipesPromise: Promise<RecipeListRow[]>;
-  action: (fd: FormData) => Promise<ActionResult>;
-};
-
-/**
- * Öffnet einen Dialog mit Dropdown aller Rezepte, bestätigt Löschung über Submit.
- * Erwartet einen Promise für die Rezepte (Server-Fetch) und eine Server Action.
- */
 export default function DeleteRecipeDialogButton({
-  label,
-  recipesPromise,
+  label = "Delete recipe",
   action,
-}: Props) {
-  // recipesPromise stammt aus einem Server-Wrapper
-  const recipes = use(recipesPromise);
-
+}: {
+  label?: string;
+  action: (fd: FormData) => Promise<ActionResult>;
+}) {
   const [open, setOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [id, setId] = useState<string>("");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const isValid = /^\d+$/.test(id) && Number(id) > 0;
 
   const onSubmit = (formData: FormData) => {
     setError(null);
@@ -53,9 +37,8 @@ export default function DeleteRecipeDialogButton({
         setError(res.error ?? "Delete failed.");
         return;
       }
-      // nach Erfolg schließen & zurücksetzen
       setOpen(false);
-      setSelectedId(null);
+      setId("");
     });
   };
 
@@ -70,30 +53,26 @@ export default function DeleteRecipeDialogButton({
 
       <DialogContent className="sm:max-w-md w-full">
         <DialogHeader>
-          <DialogTitle>Delete Recipe</DialogTitle>
+          <DialogTitle>Delete Recipe by ID</DialogTitle>
         </DialogHeader>
 
         <form action={onSubmit} className="grid gap-4">
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Select recipe</label>
-            <Select
-              value={selectedId?.toString() ?? ""}
-              onValueChange={(v) => setSelectedId(Number(v))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a recipe..." />
-              </SelectTrigger>
-              <SelectContent>
-                {recipes.map((r) => (
-                  <SelectItem key={r.id} value={String(r.id)}>
-                    {r.title} (#{r.id})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <label className="text-sm font-medium" htmlFor="recipe-id">
+              Recipe ID
+            </label>
+            <Input
+              id="recipe-id"
+              inputMode="numeric"
+              pattern="\d*"
+              maxLength={9}
+              placeholder="z. B. 42"
+              value={id}
+              onChange={(e) => setId(e.target.value.replace(/[^\d]/g, ""))}
+            />
           </div>
 
-          <input type="hidden" name="id" value={selectedId ?? ""} />
+          <input type="hidden" name="id" value={id} />
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -104,7 +83,9 @@ export default function DeleteRecipeDialogButton({
             <Button
               type="submit"
               variant="destructive"
-              disabled={!selectedId || isPending}
+              disabled={!isValid || isPending}
+              aria-disabled={!isValid || isPending}
+              title={!isValid ? "Bitte eine gültige ID eingeben" : undefined}
             >
               {isPending ? "Deleting..." : "Delete"}
             </Button>

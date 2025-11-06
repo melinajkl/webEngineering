@@ -8,9 +8,7 @@ export interface RecipeListRow {
   title: string;
 }
 
-/**
- * Liefert eine alphabetisch sortierte Liste (id, title) für Dropdown/Select.
- */
+/** Alphabetisch sortierte Kurzliste für Dropdown/Select. */
 export async function getRecipesList(): Promise<RecipeListRow[]> {
   return db
     .select({ id: recipe.id, title: recipe.title })

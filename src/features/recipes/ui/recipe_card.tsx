@@ -6,6 +6,8 @@ import { useState } from "react";
 import { RecipeDetailModal } from "@/features/recipes/ui/recipe_detail_modal";
 import { getRecipeIngredientsAction } from "@/features/recipes/actions/get_recipe_ingredients";
 import { getRecipeStepsAction } from "@/features/recipes/actions/get_recipe_steps";
+import QuantityInput from "./quantity_input";
+import { Plus } from "lucide-react";
 
 interface Recipe {
   id: number;
@@ -25,6 +27,7 @@ interface Recipe {
 
 export function RecipeCard({ recipe }: { recipe: Recipe }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [ingedientsSelectionOpen, setIngredientsSelectionOpen] = useState(false);
   const [recipeDetails, setRecipeDetails] = useState<{
     steps: Array<{ stepnumber: number; description: string }>;
     ingredients: Array<{
@@ -73,14 +76,40 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
     }
   };
 
+  const handleAddClick = async () => {
+    const ingredientsResult = await getRecipeIngredientsAction(recipe.id);
+    if (!ingredientsResult.success) {
+      setError("Failed to load ingredients for shopping list.");
+      return;
+    }
+    const ingredients = Array.isArray(ingredientsResult.data?.ingredients)
+      ? ingredientsResult.data.ingredients.filter(
+          (ing) => ing.ingredientname && ing.unit
+        )
+      : [];
+    setRecipeDetails({ steps: [], ingredients });
+    setIngredientsSelectionOpen(true);
+  }
+
   return (
     <>
       <Card
         className="hover:shadow-lg transition-shadow cursor-pointer"
         onClick={handleClick}
       >
-        <CardHeader>
+        <CardHeader className="flex justify-between">
           <CardTitle className="text-xl">{recipe.title}</CardTitle>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddClick();
+            }}
+            className="inline-flex items-center gap-1 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition ${className ?? "
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add</span>
+          </button>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -125,6 +154,15 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
         />
       )}
 
+      {recipeDetails && (
+        <QuantityInput
+          title={recipe.title}
+          isOpen={ingedientsSelectionOpen}
+          onClose={() => setIngredientsSelectionOpen(false)}
+          ingredients={recipeDetails.ingredients}
+        />
+      )}
+
       {/* Show loading or error state */}
       {isLoading && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-20 z-50">
@@ -147,3 +185,6 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
     </>
   );
 }
+
+
+

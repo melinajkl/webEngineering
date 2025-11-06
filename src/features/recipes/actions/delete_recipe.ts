@@ -9,10 +9,6 @@ const DeleteRecipeSchema = z.object({
   id: z.coerce.number().int().min(1, "Invalid recipe id."),
 });
 
-/**
- * Server Action zum Löschen eines Rezepts über FormData oder Objekt.
- * Revalidiert die Root/Layout-Route, um Übersichten zu aktualisieren.
- */
 export async function deleteRecipeAction(fd: FormData | { id: number }) {
   const idValue = fd instanceof FormData ? fd.get("id") : fd.id;
   const parsed = DeleteRecipeSchema.safeParse({ id: idValue });
@@ -25,7 +21,7 @@ export async function deleteRecipeAction(fd: FormData | { id: number }) {
 
   await deleteRecipeById(parsed.data.id);
 
-  // Passe den Pfad an eure Datenansicht an (Root/Layout ist oft passend wie beim Add)
+  // ggf. auf eure Liste/Seite anpassen (z. B. "/recipes")
   revalidatePath("/", "layout");
 
   return { ok: true, message: `Recipe ${parsed.data.id} deleted.` };
