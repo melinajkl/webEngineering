@@ -9,9 +9,10 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/shared/ui/pagination";
+import { createShoppingListItems } from "../actions/create_shopping_list_items";
 
 interface RecipeOverviewProps {
-  searchParams: Promise<{ page?: string }>;
+  searchParams?: { page?: string }; // ✅ no Promise here
 }
 
 const PAGE_SIZE = 12;
@@ -19,59 +20,38 @@ const PAGE_SIZE = 12;
 export default async function RecipeOverview({
   searchParams,
 }: RecipeOverviewProps) {
-  const params = await searchParams;
-  let currentPage = parseInt(params?.page || "1", 9);
+  const currentPageRaw = searchParams?.page ?? "1";
+  let currentPage = parseInt(currentPageRaw, 10); // ✅ radix 10
 
-  // Validate page number
-  if (isNaN(currentPage) || currentPage < 1) {
-    currentPage = 1;
-  }
+  if (Number.isNaN(currentPage) || currentPage < 1) currentPage = 1;
 
   const { recipes, totalCount } = await getRecipesWithAttributes({
     page: currentPage,
     pageSize: PAGE_SIZE,
   });
 
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE)); // avoid 0
+  if (currentPage > totalPages) currentPage = totalPages;
 
-  // Redirect to last page if current page exceeds total pages
-  if (currentPage > totalPages && totalPages > 0) {
-    currentPage = totalPages;
-  }
-
-  // Generate page numbers to display (e.g., 1 2 3 ... 10)
   const getPageNumbers = () => {
-    const pages = [];
+    const pages: (number | "...")[] = [];
     const maxPagesToShow = 5;
 
     if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       pages.push(1);
-
-      if (currentPage > 3) {
-        pages.push("...");
-      }
-
+      if (currentPage > 3) pages.push("...");
       for (
         let i = Math.max(2, currentPage - 1);
         i <= Math.min(totalPages - 1, currentPage + 1);
         i++
       ) {
-        if (!pages.includes(i)) {
-          pages.push(i);
-        }
+        if (!pages.includes(i)) pages.push(i);
       }
-
-      if (currentPage < totalPages - 2) {
-        pages.push("...");
-      }
-
+      if (currentPage < totalPages - 2) pages.push("...");
       pages.push(totalPages);
     }
-
     return pages;
   };
 
@@ -88,24 +68,25 @@ export default async function RecipeOverview({
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {recipes.map((recipe) => (
-                <RecipeCard key={recipe.id} recipe={recipe} />
+                <RecipeCard
+                  key={recipe.id}
+                  recipe={recipe}
+                  createAction={createShoppingListItems as unknown as (items: { ingredientId: number; amount: number; unitId: number; }[]) => Promise<void>} // ✅ pass server action from server component (cast to expected type)
+                />
               ))}
             </div>
 
-            {/* shadcn Pagination */}
             <div className="mt-12 flex justify-center">
               <Pagination>
                 <PaginationContent>
-                  {/* Previous Button */}
                   {hasPrevPage && (
                     <PaginationItem>
                       <PaginationPrevious href={`?page=${currentPage - 1}`} />
                     </PaginationItem>
                   )}
 
-                  {/* Page Numbers */}
-                  {pageNumbers.map((page, index) => (
-                    <PaginationItem key={index}>
+                  {pageNumbers.map((page, idx) => (
+                    <PaginationItem key={`${page}-${idx}`}>
                       {page === "..." ? (
                         <PaginationEllipsis />
                       ) : (
@@ -119,7 +100,6 @@ export default async function RecipeOverview({
                     </PaginationItem>
                   ))}
 
-                  {/* Next Button */}
                   {hasNextPage && (
                     <PaginationItem>
                       <PaginationNext href={`?page=${currentPage + 1}`} />

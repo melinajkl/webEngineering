@@ -11,6 +11,27 @@ interface RecipeIngredients {
   }>;
 }
 
+interface RecipeIngredientsWithId {
+  recipeId: number;
+  ingredients: Array<{
+    id: number;
+    amount: number;
+    unit: string;
+    ingredientname: string;
+  }>;
+}
+
+interface RecipeIngredientsWithUnitId {
+  recipeId: number;
+  ingredients: Array<{
+    ingredientId: number;
+    amount: number;
+    unitId: number;
+    unit: string;
+    ingredientname: string;
+  }>;
+}
+
 export async function getRecipeIngredientsById(
   id: number
 ): Promise<RecipeIngredients> {
@@ -33,7 +54,7 @@ export async function getRecipeIngredientsById(
 
 export async function getRecipeIngredientsWithIdById(
   id: number
-): Promise<RecipeIngredients> {
+): Promise<RecipeIngredientsWithId> {
   const ingredientsList = await db
     .select({
       id: ingredients.id,
@@ -52,6 +73,27 @@ export async function getRecipeIngredientsWithIdById(
   };
 }
 
+export async function getRecipeIngredientsWithUnitIdById(
+  id: number
+): Promise<RecipeIngredientsWithUnitId> {
+  const ingredientsList = await db
+    .select({
+      ingredientId: ingredients.id,
+      amount: recipeIngredients.amount,
+      ingredientname: ingredients.name,
+      unitId: unit.id,
+      unit: unit.shortForm
+    })
+    .from(recipeIngredients)
+    .innerJoin(ingredients, eq(recipeIngredients.ingredientId, ingredients.id))
+    .innerJoin(unit, eq(ingredients.unit, unit.id))
+    .where(eq(recipeIngredients.recipeId, id));
+
+  return {
+    recipeId: id,
+    ingredients: ingredientsList,
+  };
+}
 /*
 export async function getRecipeStepsById(id_: number): Promise<RecipeSteps> {
   const steps = await db.select( {

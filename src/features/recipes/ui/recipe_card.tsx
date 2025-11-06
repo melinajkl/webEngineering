@@ -4,11 +4,10 @@ import { Badge } from "@/shared/ui/badge";
 import { IconClock, IconChefHat } from "@tabler/icons-react";
 import { useState } from "react";
 import { RecipeDetailModal } from "@/features/recipes/ui/recipe_detail_modal";
-import { getRecipeIngredientsAction } from "@/features/recipes/actions/get_recipe_ingredients";
+import { getRecipeIngredientsAction, getRecipeIngredientsWithUnitIdAction } from "@/features/recipes/actions/get_recipe_ingredients";
 import { getRecipeStepsAction } from "@/features/recipes/actions/get_recipe_steps";
 import QuantityInput from "./quantity_input";
 import { Plus } from "lucide-react";
-import { getRecipeIngredientsWithIdAction } from "@/features/recipes/actions/get_recipes_for_shopping_list";
 
 interface Recipe {
   id: number;
@@ -16,58 +15,76 @@ interface Recipe {
   prepareTime: number;
   cookingTime: number;
   portions: number;
-  foodCategory: {
-    id: number;
-    name: string | null;
-  } | null;
-  attributes: Array<{
-    id: number;
-    name: string | null;
-  }>;
+  foodCategory: { id: number; name: string | null } | null;
+  attributes: Array<{ id: number; name: string | null }>;
 }
 
-export function RecipeCard({ recipe }: { recipe: Recipe }) {
+/** Shapes */
+type DetailIngredient = {
+  ingredientname: string;
+  amount: number;
+  unit: string; // display label
+};
+
+type SelectIngredient = {
+  ingredientId: number;
+  ingredientname: string;
+  amount: number;
+  unitId: number;
+  unit: string; // optional display label
+};
+
+export function RecipeCard({
+  recipe,
+  createAction,
+}: {
+  recipe: Recipe;
+  createAction: (items: Array<{ ingredientId: number; amount: number; unitId: number }>) => Promise<void>;
+}) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [ingedientsSelectionOpen, setIngredientsSelectionOpen] =
     useState(false);
+
   const [recipeDetails, setRecipeDetails] = useState<{
     steps: Array<{ stepnumber: number; description: string }>;
-    ingredients: Array<{
-      ingredientname: string;
-      amount: number;
-      unit: string;
-    }>;
+    ingredients: DetailIngredient[];
   } | null>(null);
+
+  const [selectionIngredients, setSelectionIngredients] = useState<
+    SelectIngredient[] | null
+  >(null);
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleClick = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
     try {
-      // Fetch both using actions in parallel
       const [stepsResult, ingredientsResult] = await Promise.all([
         getRecipeStepsAction(recipe.id),
         getRecipeIngredientsAction(recipe.id),
       ]);
 
-      // Validate both results
       if (!stepsResult?.success || !ingredientsResult?.success) {
         throw new Error("Failed to load recipe details!");
       }
-      console.log("IngredientsResult: ", ingredientsResult);
-      // Ensure data is an array
+
       const steps = Array.isArray(stepsResult.data?.steps)
         ? stepsResult.data.steps
         : [];
-      const ingredients = Array.isArray(ingredientsResult.data?.ingredients)
-        ? ingredientsResult.data.ingredients.filter(
-            (ing) => ing.ingredientname && ing.unit
-          )
+      const ingredients: DetailIngredient[] = Array.isArray(
+        ingredientsResult.data?.ingredients
+      )
+        ? ingredientsResult.data.ingredients
+            .filter((ing) => ing.ingredientname && ing.unit)
+            .map((ing) => ({
+              ingredientname: ing.ingredientname,
+              amount: ing.amount,
+              unit: ing.unit, // keep display label
+            }))
         : [];
 
-      console.log("Steps:", steps);
-      console.log("Ingredients:", ingredients);
-
-      // Update state all at once
       setRecipeDetails({ steps, ingredients });
       setIsModalOpen(true);
     } catch (err) {
@@ -79,18 +96,38 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
   };
 
   const handleAddClick = async () => {
-    const ingredientsResult = await getRecipeIngredientsWithIdAction(recipe.id);
-    if (!ingredientsResult.success) {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      const result = await getRecipeIngredientsWithUnitIdAction(recipe.id);
+      if (!result?.success)
+        throw new Error("Failed to load ingredients for shopping list.");
+
+      const ingredients: SelectIngredient[] = Array.isArray(
+        result.data?.ingredients
+      )
+        ? result.data.ingredients
+            .filter(
+              (ing) => ing.ingredientname && ing.unitId && ing.ingredientId
+            )
+            .map((ing) => ({
+              ingredientId: ing.ingredientId,
+              ingredientname: ing.ingredientname,
+              amount: ing.amount,
+              unitId: ing.unitId,
+              unit: ing.unit,
+            }))
+        : [];
+
+      setSelectionIngredients(ingredients);
+      setIngredientsSelectionOpen(true);
+      setIsModalOpen(false); // ensure only one modal at a time
+    } catch (err) {
+      console.error(err);
       setError("Failed to load ingredients for shopping list.");
-      return;
+    } finally {
+      setIsLoading(false);
     }
-    const ingredients = Array.isArray(ingredientsResult.data?.ingredients)
-      ? ingredientsResult.data.ingredients.filter(
-          (ing) => ing.ingredientname && ing.unit
-        )
-      : [];
-    setRecipeDetails({ steps: [], ingredients });
-    setIngredientsSelectionOpen(true);
   };
 
   return (
@@ -105,9 +142,9 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              handleAddClick();
+              void handleAddClick();
             }}
-            className="inline-flex items-center gap-1 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition ${className ?? "
+            className="inline-flex items-center gap-1 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition"
           >
             <Plus className="h-4 w-4" />
             <span>Add</span>
@@ -143,29 +180,31 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
         </CardContent>
       </Card>
 
-      {/* Render the modal only if we have details */}
+      {/* Detail modal */}
       {recipeDetails && (
         <RecipeDetailModal
           recipe={{
             ...recipe,
             steps: recipeDetails.steps,
-            ingredients: recipeDetails.ingredients,
+            ingredients: recipeDetails.ingredients, // DetailIngredient[]
           }}
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
         />
       )}
 
-      {recipeDetails && (
+      {/* Quantity selection modal */}
+      {selectionIngredients && (
         <QuantityInput
           title={recipe.title}
           isOpen={ingedientsSelectionOpen}
           onClose={() => setIngredientsSelectionOpen(false)}
-          ingredients={recipeDetails.ingredients}
+          ingredients={selectionIngredients} // SelectIngredient[]
+          createAction={createAction}
         />
       )}
 
-      {/* Show loading or error state */}
+      {/* Loading / Error overlays */}
       {isLoading && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-20 z-50">
           <p className="text-white">Loading...</p>

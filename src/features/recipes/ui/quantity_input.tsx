@@ -1,3 +1,5 @@
+"use client";
+import { useState } from "react";
 import { Button } from "@/shared/ui/button";
 import { Checkbox } from "@/shared/ui/checkbox";
 import {
@@ -7,15 +9,23 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 
+interface QuantityItem {
+  ingredientname: string;
+  amount: number;
+  unit: string;
+  unitId: number;
+  ingredientId: number;
+}
+
 interface QuantityProps {
   title: string;
-  ingredients: Array<{
-    ingredientname: string;
-    amount: number;
-    unit: string;
-  }>;
+  ingredients: QuantityItem[];
   isOpen: boolean;
   onClose: () => void;
+  // server action (or API proxy) passed in by the parent
+  createAction: (
+    items: Array<{ ingredientId: number; amount: number; unitId: number }>
+  ) => Promise<void>;
 }
 
 export default function QuantityInput({
@@ -23,21 +33,55 @@ export default function QuantityInput({
   ingredients,
   isOpen,
   onClose,
+  createAction, // ✅ use the passed-in action
 }: QuantityProps) {
-  var checkedIngredients: Array<{ id: number; amount: number }> = [];
-  const handleSave = () => {};
+  const [checkedIngredients, setCheckedIngredients] = useState<
+    Array<{ ingredientId: number; amount: number }>
+  >([]);
+  const [pending, setPending] = useState(false);
 
-  const handleCheck = (checked: boolean) => {
-    console.log("Checkbox checked:", checked);
-    if (checked) {
-      // Add to checkedIngredients
-      
-    } else {
-      // Remove from checkedIngredients
+  const handleCheck = (
+    checked: boolean,
+    ingredientId: number,
+    amount: number
+  ) => {
+    setCheckedIngredients((prev) => {
+      if (checked) {
+        if (prev.some((i) => i.ingredientId === ingredientId)) return prev;
+        return [...prev, { ingredientId, amount }];
+      }
+      return prev.filter((i) => i.ingredientId !== ingredientId);
+    });
+  };
+
+  const isSelected = (ingredientId: number) =>
+    checkedIngredients.some((i) => i.ingredientId === ingredientId);
+
+  const handleSave = async () => {
+    try {
+      setPending(true);
+      const payload = checkedIngredients.map((sel) => {
+        const src = ingredients.find(
+          (ing) => ing.ingredientId === sel.ingredientId
+        );
+        if (!src) throw new Error("Ingredient not found for selection.");
+        return {
+          ingredientId: sel.ingredientId,
+          amount: sel.amount,
+          unitId: src.unitId,
+        };
+      });
+
+      await createAction(payload); // ✅ call the prop action
+      onClose();
+    } catch (err) {
+      console.error("Failed to add shopping list items:", err);
+      // optionally show a toast here
+    } finally {
+      setPending(false);
     }
   };
 
-  console.log("input modal received ingredients:", ingredients);
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent
@@ -52,24 +96,46 @@ export default function QuantityInput({
 
         {ingredients && ingredients.length > 0 ? (
           <div className="flex flex-col gap-6 m-6">
-            {ingredients.map((ingredient, index) => (
-              <div key={index} className="flex items-center justify-between">
-                <div className="flex gap-4 items-center">
-                  <Checkbox id="ingredient.id" onCheckedChange={handleCheck} />
-                  <label>{ingredient.ingredientname}</label>
+            {ingredients.map((ingredient) => {
+              const checkboxId = `ingredient-${ingredient.ingredientId}`;
+              return (
+                <div
+                  key={ingredient.ingredientId}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex gap-4 items-center">
+                    <Checkbox
+                      id={checkboxId}
+                      checked={isSelected(ingredient.ingredientId)}
+                      onCheckedChange={(c) =>
+                        handleCheck(
+                          Boolean(c),
+                          ingredient.ingredientId,
+                          ingredient.amount
+                        )
+                      }
+                    />
+                    <label htmlFor={checkboxId}>
+                      {ingredient.ingredientname}
+                    </label>
+                  </div>
+                  <span className="text-gray-500 text-sm">
+                    {ingredient.amount} {ingredient.unit}
+                  </span>
                 </div>
-                <span className="text-gray-500 text-sm">
-                  {ingredient.amount} {ingredient.unit}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="text-gray-500 mt-6">No ingredients found.</p>
         )}
 
-        <Button className="mt-6 justify-right" onClick={handleSave}>
-          Add to Shopping List
+        <Button
+          className="mt-6 self-end"
+          onClick={handleSave}
+          disabled={checkedIngredients.length === 0 || pending}
+        >
+          {pending ? "Adding..." : "Add to Shopping List"}
         </Button>
       </DialogContent>
     </Dialog>
