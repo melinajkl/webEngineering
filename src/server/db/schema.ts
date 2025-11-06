@@ -82,7 +82,6 @@ export const recipeSteps = sqliteTable("RECIPE_STEPS", {
 export const shoppingList = sqliteTable("SHOPPING_LIST", {
   id: integer("id").primaryKey({autoIncrement : true}),
   ingredientId: integer("ingredient_id").references(() => ingredients.id).notNull(),
-  dateOfUse: real("date_of_use").notNull(),
   amount: integer("amount").notNull(),
   unitId: integer("unitId").references(() => unit.id).notNull(),
   checked: integer("checked", { mode: "boolean" }).notNull(),
