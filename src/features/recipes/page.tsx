@@ -3,10 +3,11 @@ import RecipeOverview from "@/features/recipes/ui/recipe_overview";
 import OpenCreateRecipeButton from "@/features/recipes/ui/open_create_recipe_button";
 
 interface PageProps {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: { page?: string };
 }
 
 export default function Page({ searchParams }: PageProps) {
+  
   return (
     <div className="flex flex-col min-h-screen">
       <NavigationBar />

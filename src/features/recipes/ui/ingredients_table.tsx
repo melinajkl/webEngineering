@@ -13,10 +13,6 @@ interface tableProps {
 }
 
 export function IngredientsTable(props: tableProps) {
-  console.log("props in IngredientsTable:", props);
-  console.log("typeof props.ingredients:", typeof props.ingredients);
-  console.log("Array.isArray:", Array.isArray(props.ingredients));
-
   const ingredients = props.ingredients;
 
   // Safety check

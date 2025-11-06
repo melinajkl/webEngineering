@@ -33,7 +33,6 @@ export function RecipeDetailModal({
   isOpen,
   onClose,
 }: RecipeDetailModalProps) {
-  console.log("Modal received ingredients:", recipe.ingredients);
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl p-6 max-h-[90vh] overflow-y-auto">

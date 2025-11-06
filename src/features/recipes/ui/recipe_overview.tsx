@@ -10,6 +10,7 @@ import {
   PaginationPrevious,
 } from "@/shared/ui/pagination";
 import { createShoppingListItems } from "../actions/create_shopping_list_items";
+import { AwardIcon } from "lucide-react";
 
 interface RecipeOverviewProps {
   searchParams?: { page?: string }; // ✅ no Promise here
@@ -20,6 +21,7 @@ const PAGE_SIZE = 12;
 export default async function RecipeOverview({
   searchParams,
 }: RecipeOverviewProps) {
+  searchParams = await searchParams; // in case it's a Promise
   const currentPageRaw = searchParams?.page ?? "1";
   let currentPage = parseInt(currentPageRaw, 10); // ✅ radix 10
 

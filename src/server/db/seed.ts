@@ -728,20 +728,6 @@ export async function runSeed() {
     }
   }
 
-  // Optional: a small sample shopping list entry
-  if (ingId["Milk"]) {
-    await db
-      .insert(shoppingList)
-      .values({
-        ingredientId: ingId["Milk"],
-        dateOfUse: Date.now(),
-        amount: 500,
-        unitId: unitId["ml"],
-        checked: false,
-      })
-      .onConflictDoNothing();
-  }
-
   console.log("✅ Seed finished: master data + 20+ recipes.");
 }
 
