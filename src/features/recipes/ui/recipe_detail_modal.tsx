@@ -1,4 +1,3 @@
-"use client";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +22,7 @@ interface RecipeDetailModalProps {
       ingredientname: string;
       amount: number;
       unit: string;
-    }>; // ✅ This should be an Array
+    }>;
   };
   isOpen: boolean;
   onClose: () => void;
@@ -104,7 +103,7 @@ export function RecipeDetailModal({
                   key={step.stepnumber}
                   className="flex gap-2 hover:bg-gray-50 -mx-2 px-2 py-1 rounded transition-colors"
                 >
-                  <span className="text-gray-400 font-medium min-w-[1.5rem]">
+                  <span className="text-gray-400 font-medium min-w-6">
                     {step.stepnumber}.
                   </span>
                   <span className="text-gray-700">{step.description}</span>
