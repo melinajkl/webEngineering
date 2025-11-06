@@ -8,6 +8,7 @@ import { getRecipeIngredientsAction } from "@/features/recipes/actions/get_recip
 import { getRecipeStepsAction } from "@/features/recipes/actions/get_recipe_steps";
 import QuantityInput from "./quantity_input";
 import { Plus } from "lucide-react";
+import { getRecipeIngredientsWithIdAction } from "@/features/recipes/actions/get_recipes_for_shopping_list";
 
 interface Recipe {
   id: number;
@@ -27,7 +28,8 @@ interface Recipe {
 
 export function RecipeCard({ recipe }: { recipe: Recipe }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [ingedientsSelectionOpen, setIngredientsSelectionOpen] = useState(false);
+  const [ingedientsSelectionOpen, setIngredientsSelectionOpen] =
+    useState(false);
   const [recipeDetails, setRecipeDetails] = useState<{
     steps: Array<{ stepnumber: number; description: string }>;
     ingredients: Array<{
@@ -77,7 +79,7 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
   };
 
   const handleAddClick = async () => {
-    const ingredientsResult = await getRecipeIngredientsAction(recipe.id);
+    const ingredientsResult = await getRecipeIngredientsWithIdAction(recipe.id);
     if (!ingredientsResult.success) {
       setError("Failed to load ingredients for shopping list.");
       return;
@@ -89,7 +91,7 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
       : [];
     setRecipeDetails({ steps: [], ingredients });
     setIngredientsSelectionOpen(true);
-  }
+  };
 
   return (
     <>
@@ -185,6 +187,3 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
     </>
   );
 }
-
-
-

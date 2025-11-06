@@ -31,6 +31,27 @@ export async function getRecipeIngredientsById(
   };
 }
 
+export async function getRecipeIngredientsWithIdById(
+  id: number
+): Promise<RecipeIngredients> {
+  const ingredientsList = await db
+    .select({
+      id: ingredients.id,
+      amount: recipeIngredients.amount,
+      ingredientname: ingredients.name,
+      unit: unit.shortForm,
+    })
+    .from(recipeIngredients)
+    .innerJoin(ingredients, eq(recipeIngredients.ingredientId, ingredients.id))
+    .innerJoin(unit, eq(ingredients.unit, unit.id))
+    .where(eq(recipeIngredients.recipeId, id));
+
+  return {
+    recipeId: id,
+    ingredients: ingredientsList,
+  };
+}
+
 /*
 export async function getRecipeStepsById(id_: number): Promise<RecipeSteps> {
   const steps = await db.select( {
