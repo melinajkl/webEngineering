@@ -8,6 +8,8 @@ import { getRecipeIngredientsAction } from "@/features/recipes/actions/get_recip
 import { getRecipeStepsAction } from "@/features/recipes/actions/get_recipe_steps";
 import QuantityInput from "./quantity_input";
 import { Plus } from "lucide-react";
+import DeleteRecipeButton from "./delete_recipe_button";
+import { Button } from "@/shared/ui/button";
 
 interface Recipe {
   id: number;
@@ -99,17 +101,20 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
       >
         <CardHeader className="flex justify-between">
           <CardTitle className="text-xl">{recipe.title}</CardTitle>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAddClick();
-            }}
-            className="inline-flex items-center gap-1 rounded-2xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition ${className ?? "
-          >
-            <Plus className="h-4 w-4" />
-            <span>Add</span>
-          </button>
+          <div className="flex gap-2">
+            <DeleteRecipeButton recipeId={recipe.id} />
+            <Button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddClick();
+              }}
+              variant="outline"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add</span>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
