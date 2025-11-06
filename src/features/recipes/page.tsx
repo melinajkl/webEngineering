@@ -1,7 +1,6 @@
 import { NavigationBar } from "@/features/shoppinglist/ui/navigation_bar";
 import RecipeOverview from "@/features/recipes/ui/recipe_overview";
 import OpenCreateRecipeButton from "@/features/recipes/ui/open_create_recipe_button";
-import { HeaderContainer } from "./ui/container";
 
 interface PageProps {
   searchParams: Promise<{ page?: string }>;
