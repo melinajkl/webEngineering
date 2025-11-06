@@ -193,7 +193,7 @@ export default function RecipeForm({
         });
       }}
     >
-      <Card className="rounded-2xl shadow-sm max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl">
+      <Card className="rounded-2xl shadow-sm max-w-screen-sm md:max-w-3xl lg:max-w-5xl xl:max-w-7xl">
         <CardHeader>
           <CardTitle className="text-xl">New Recipe</CardTitle>
         </CardHeader>
