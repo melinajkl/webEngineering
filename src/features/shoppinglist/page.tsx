@@ -8,7 +8,7 @@ export default async function Page() {
   return (
     <div className="flex flex-col min-h-screen">
       <NavigationBar />
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto bg-gray-50">
         <ShoppingList initialItems={initialItems} />{" "}
         {/* Props an Client Component */}
       </div>

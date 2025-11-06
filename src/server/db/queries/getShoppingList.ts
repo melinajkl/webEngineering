@@ -12,7 +12,6 @@ export type shoppingListRow = {
   ingredientId: number;
   ingredientName: string | null;
   category: string | null;
-  dateOfUse: number | null; // ✅ Kann auch null sein
   amount: number;
   unitName: string | null;
   unitId: number;
@@ -26,7 +25,7 @@ export async function getShoppingList(): Promise<shoppingListRow[]> {
       ingredientId: shoppingList.ingredientId,
       ingredientName: ingredients.name,
       category: ingredientCat.name,
-      dateOfUse: shoppingList.dateOfUse,
+
       amount: shoppingList.amount,
       unitId: shoppingList.unitId,
       unitName: unit.name,
@@ -36,8 +35,6 @@ export async function getShoppingList(): Promise<shoppingListRow[]> {
     .leftJoin(ingredients, eq(shoppingList.ingredientId, ingredients.id))
     .leftJoin(ingredientCat, eq(ingredients.category, ingredientCat.id))
     .leftJoin(unit, eq(shoppingList.unitId, unit.id))
-    // ✅ Keine where-Klausel = alle Einträge werden angezeigt
-    .orderBy(asc(ingredientCat.name), asc(shoppingList.dateOfUse));
 
   return rows;
 }
